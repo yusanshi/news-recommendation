@@ -39,7 +39,7 @@ rm MINDsmall_*.zip
 # Preprocess data into appropriate format
 cd ..
 python3 src/data_preprocess.py
-# Remember you shoud modify `num_words` in `src/config.py` by the output of `src/data_preprocess.py`
+# Remember you shoud modify `num_*` in `src/config.py` by the output of `src/data_preprocess.py`
 ```
 
 Modify `src/config.py` to select target model. The configuration file is organized into general part (which is applied to all models) and model-specific part (that some models not have).
@@ -51,8 +51,11 @@ vim src/config.py
 Run.
 
 ```bash
+# Train and save checkpoint into `checkpoint/{model_name}/` directory
 python3 src/train.py
+# Output `data/test/answer.json` file according to latest checkpoint files
 python3 src/inference.py
+# Comapre `data/test/answer.json` and `data/test/truth.json`, print the result
 python3 src/evaluate.py
 
 # or

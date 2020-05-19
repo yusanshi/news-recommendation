@@ -15,4 +15,4 @@ class ClickPredictor(torch.nn.Module):
         """
         # batch_size
         return torch.bmm(user_vector.unsqueeze(dim=1),
-                         candidate_news_vector.unsqueeze(dim=2)).squeeze()
+                         candidate_news_vector.unsqueeze(dim=2)).flatten()

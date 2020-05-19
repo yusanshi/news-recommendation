@@ -9,7 +9,7 @@ import numpy as np
 import csv
 
 
-def parse_behaviors(behaviors_source, behaviors_target, user2int_path, mode):
+def parse_behaviors(behaviors_source, behaviors_target, user2int_path):
     print(f"Parse {behaviors_source}")
     behaviors = pd.read_table(behaviors_source,
                               header=None,
@@ -18,52 +18,41 @@ def parse_behaviors(behaviors_source, behaviors_target, user2int_path, mode):
     behaviors.fillna(' ', inplace=True)
     behaviors.impressions = behaviors.impressions.str.split()
 
-    if mode == 'train':
-        with tqdm(total=len(behaviors), desc="Balancing data") as pbar:
-            for row in behaviors.itertuples():
-                positive = [x for x in row.impressions if x.endswith('1')]
-                negative = [x for x in row.impressions if x.endswith('0')]
-                if len(negative) > len(positive) * Config.negative_sampling_ratio:
-                    negative = random.sample(
-                        negative,
-                        len(positive) * Config.negative_sampling_ratio)
-                behaviors.at[row.Index, 'impressions'] = positive + negative
-                pbar.update(1)
-
-        user2int = {}
-        for row in behaviors.itertuples(index=False):
-            if row.user not in user2int:
-                user2int[row.user] = len(user2int) + 1
-
+    with tqdm(total=len(behaviors), desc="Balancing data") as pbar:
         for row in behaviors.itertuples():
-            behaviors.at[row.Index, 'user'] = user2int[row.user]
+            positive = [x for x in row.impressions if x.endswith('1')]
+            negative = [x for x in row.impressions if x.endswith('0')]
+            if len(negative) > len(positive) * Config.negative_sampling_ratio:
+                negative = random.sample(
+                    negative,
+                    len(positive) * Config.negative_sampling_ratio)
+            behaviors.at[row.Index, 'impressions'] = positive + negative
+            pbar.update(1)
 
-        pd.DataFrame(user2int.items(), columns=['user',
-                                                'int']).to_csv(user2int_path,
-                                                               sep='\t',
-                                                               index=False)
-        print(
-            f'Please modify `num_users` in `src/config.py` into 1 + {len(user2int)}'
-        )
+    user2int = {}
+    for row in behaviors.itertuples(index=False):
+        if row.user not in user2int:
+            user2int[row.user] = len(user2int) + 1
 
-    elif mode == 'test':
-        user2int = dict(
-            pd.read_table(user2int_path).values.tolist())
-        for row in behaviors.itertuples():
-            behaviors.at[row.Index,
-                         'user'] = user2int[row.user] if row.user in user2int else 0
+    for row in behaviors.itertuples():
+        behaviors.at[row.Index, 'user'] = user2int[row.user]
 
-    else:
-        print('Wrong mode!')
-        return
+    pd.DataFrame(user2int.items(), columns=['user',
+                                            'int']).to_csv(user2int_path,
+                                                           sep='\t',
+                                                           index=False)
+    print(
+        f'Please modify `num_users` in `src/config.py` into 1 + {len(user2int)}'
+    )
 
     behaviors = behaviors.explode('impressions').reset_index(drop=True)
     behaviors['candidate_news'], behaviors[
         'clicked'] = behaviors.impressions.str.split('-').str
-    behaviors.to_csv(behaviors_target,
-                     sep='\t',
-                     index=False,
-                     columns=['user', 'clicked_news', 'candidate_news', 'clicked'])
+    behaviors.to_csv(
+        behaviors_target,
+        sep='\t',
+        index=False,
+        columns=['user', 'clicked_news', 'candidate_news', 'clicked'])
 
 
 def parse_news(source, target, word2int_path, category2int_path, mode):
@@ -159,9 +148,8 @@ def parse_news(source, target, word2int_path, category2int_path, mode):
                   desc="Parsing categories and words") as pbar:
             for row in news.itertuples(index=False):
                 new_row = [
-                    row.id, category2int[row.category]
-                    if row.category in category2int else 0,
-                    category2int[row.subcategory]
+                    row.id, category2int[row.category] if row.category
+                    in category2int else 0, category2int[row.subcategory]
                     if row.subcategory in category2int else 0,
                     [0] * Config.num_words_title,
                     [0] * Config.num_words_abstract
@@ -272,8 +260,7 @@ if __name__ == '__main__':
     print('Parse behaviors')
     parse_behaviors(path.join(train_dir, 'behaviors.tsv'),
                     path.join(train_dir, 'behaviors_parsed.tsv'),
-                    path.join(train_dir, 'user2int.tsv'),
-                    mode='train')
+                    path.join(train_dir, 'user2int.tsv'))
 
     print('Parse news')
     parse_news(path.join(train_dir, 'news.tsv'),
@@ -293,13 +280,6 @@ if __name__ == '__main__':
     print('Transform test data')
     transform2json(path.join(test_dir, 'behaviors.tsv'),
                    path.join(test_dir, 'truth.json'))
-
-    print('Parse behaviors')
-    parse_behaviors(path.join(test_dir, 'behaviors.tsv'),
-                    path.join(test_dir, 'behaviors_parsed.tsv'),
-                    path.join(train_dir, 'user2int.tsv'),
-                    mode='test'
-                    )
 
     print('Parse news')
     parse_news(path.join(test_dir, 'news.tsv'),

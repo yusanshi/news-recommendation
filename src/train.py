@@ -42,8 +42,8 @@ def train():
 
     dataset = Dataset('data/train/behaviors_parsed.tsv',
                       'data/train/news_parsed.tsv')
-    train_size = int(
-        Config.train_validation_split[0] / sum(Config.train_validation_split) * len(dataset))
+    train_size = int(Config.train_validation_split[0] /
+                     sum(Config.train_validation_split) * len(dataset))
     validation_size = len(dataset) - train_size
     train_dataset, val_dataset = random_split(dataset,
                                               (train_size, validation_size))
@@ -96,9 +96,12 @@ def train():
                 minibatch = next(train_dataloader)
 
             epoch += 1
-
-            y_pred = model(minibatch["candidate_news"],
-                           minibatch["clicked_news"])
+            if model_name == 'LSTUR':
+                y_pred = model(minibatch["user"], minibatch["candidate_news"],
+                               minibatch["clicked_news"])
+            else:
+                y_pred = model(minibatch["candidate_news"],
+                               minibatch["clicked_news"])
             y = minibatch["clicked"].float().to(device)
             loss = criterion(y_pred, y)
             loss_full.append(loss.item())
@@ -114,7 +117,7 @@ def train():
                         'model_state_dict': model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
                         'epoch': epoch
-                    }, f"./checkpoint/ckpt-{epoch}.pth")
+                    }, f"./checkpoint/{model_name}/ckpt-{epoch}.pth")
 
             if i % Config.num_batches_batch_loss == 0:
                 tqdm.write(
@@ -140,7 +143,7 @@ def train():
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'epoch': epoch
-        }, f"./checkpoint/ckpt-{epoch}.pth")
+        }, f"./checkpoint/{model_name}/ckpt-{epoch}.pth")
 
     val_loss, val_auc, val_mrr, val_ndcg5, val_ncg10 = validate(
         model, val_dataset)
@@ -175,8 +178,12 @@ def validate(model, dataset):
     with tqdm(total=len(dataloader),
               desc="Checking loss and accuracy") as pbar:
         for minibatch in dataloader:
-            y_pred = model(minibatch["candidate_news"],
-                           minibatch["clicked_news"])
+            if model_name == 'LSTUR':
+                y_pred = model(minibatch["user"], minibatch["candidate_news"],
+                               minibatch["clicked_news"])
+            else:
+                y_pred = model(minibatch["candidate_news"],
+                               minibatch["clicked_news"])
             y = minibatch["clicked"].float().to(device)
             loss = criterion(y_pred, y)
             loss_full.append(loss.item())

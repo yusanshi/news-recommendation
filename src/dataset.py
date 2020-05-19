@@ -1,12 +1,22 @@
 from torch.utils.data import Dataset
 import pandas as pd
 from ast import literal_eval
-from config import Config
+from config import model_name
+
+if model_name == 'NRMS':
+    from config import NRMSConfig as Config
+elif model_name == 'NAML':
+    from config import NAMLConfig as Config
+elif model_name == 'LSTUR':
+    from config import LSTURConfig as Config
+else:
+    print("Model name not included!")
+    exit()
 
 
 class NRMSDataset(Dataset):
     def __init__(self, behaviors_path, news_path):
-        super(Dataset, self).__init__()
+        super(NRMSDataset, self).__init__()
         self.behaviors = pd.read_table(behaviors_path)
         self.news_parsed = pd.read_table(news_path,
                                          index_col='id',
@@ -33,6 +43,7 @@ class NRMSDataset(Dataset):
 
         item = {}
         row = self.behaviors.iloc[idx]
+        item["user"] = row.user
         item["clicked"] = row.clicked
         item["candidate_news"] = id2title(row.candidate_news, self.news_parsed)
         item["clicked_news"] = [
@@ -46,13 +57,12 @@ class NRMSDataset(Dataset):
             len(item["clicked_news"])
         assert repeated_times >= 0
         item["clicked_news"].extend([padding] * repeated_times)
-
         return item
 
 
 class NAMLDataset(Dataset):
     def __init__(self, behaviors_path, news_path):
-        super(Dataset, self).__init__()
+        super(NAMLDataset, self).__init__()
         self.behaviors = pd.read_table(behaviors_path)
         self.news_parsed = pd.read_table(news_path,
                                          index_col='id',
@@ -125,7 +135,7 @@ class NAMLDataset(Dataset):
 
 class LSTURDataset(Dataset):
     def __init__(self, behaviors_path, news_path):
-        super(Dataset, self).__init__()
+        super(LSTURDataset, self).__init__()
         self.behaviors = pd.read_table(behaviors_path)
         self.news_parsed = pd.read_table(news_path,
                                          index_col='id',

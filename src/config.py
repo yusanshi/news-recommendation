@@ -1,7 +1,8 @@
 import os
 
-# Currently included model: 'NRMS', 'NAML', 'LSTUR'
+# Currently included model
 model_name = 'NRMS'
+assert model_name in ['NRMS', 'NAML', 'LSTUR']
 
 
 class BaseConfig():
@@ -22,28 +23,28 @@ class BaseConfig():
     load_checkpoint = os.environ[
         'LOAD_CHECKPOINT'] == '1' if 'LOAD_CHECKPOINT' in os.environ else True
     num_words_title = 20
+    num_words_abstract = 50
     word_freq_threshold = 3
     negative_sampling_ratio = 4
-    inference_radio = 0.1
     dropout_probability = 0.2
     # Modify the following by the output of `src/dataprocess.py`
-    num_words = 1 + 15352
+    num_words = 1 + 31313
+    num_categories = 1 + 274
+    num_users = 1 + 50000
     word_embedding_dim = 300
     # For additive attention
     query_vector_dim = 200
     category_embedding_dim = 100
-    num_words_abstract = 50
 
 
 class NRMSConfig(BaseConfig):
     # For multi-head self-attention
     num_attention_heads = 15
-    num_categories = 1 + 274
 
 
 class NAMLConfig(BaseConfig):
     # For CNN
-    num_filters = 400
+    num_filters = 300
     window_size = 3
 
 
@@ -54,6 +55,3 @@ class LSTURConfig(BaseConfig):
     # 'ini' or 'con'. See paper for more detail
     long_short_term_method = 'ini'
     masking_probability = 0.5
-    # Modify the following by the output of `src/dataprocess.py`
-    num_users = 1 + 50000
-    num_categories = 1 + 274

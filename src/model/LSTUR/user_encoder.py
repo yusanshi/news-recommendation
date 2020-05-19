@@ -18,10 +18,9 @@ class UserEncoder(torch.nn.Module):
         """
         # 1, batch_size, num_filters * 4
         if self.config.long_short_term_method == 'ini':
-            _, last_hidden = self.gru(
-                clicked_news_vector.transpose(0, 1), user.unsqueeze(dim=0))
+            _, last_hidden = self.gru(clicked_news_vector.transpose(0, 1),
+                                      user.unsqueeze(dim=0))
         else:
-            _, last_hidden = self.gru(
-                clicked_news_vector.transpose(0, 1))
+            _, last_hidden = self.gru(clicked_news_vector.transpose(0, 1))
             # TODO
         return last_hidden.squeeze(dim=0)

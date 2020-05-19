@@ -12,15 +12,15 @@ class LSTUR(torch.nn.Module):
     LSTUR network.
     Input a candidate news and a list of user clicked news, produce the click probability.
     """
-
     def __init__(self, config, pretrained_word_embedding=None):
         super(LSTUR, self).__init__()
         self.config = config
         self.news_encoder = NewsEncoder(config, pretrained_word_embedding)
         self.user_encoder = UserEncoder(config)
         self.click_predictor = ClickPredictor()
-        self.user_embedding = nn.Embedding(
-            config.num_users, config.num_filters * 4, padding_idx=0)
+        self.user_embedding = nn.Embedding(config.num_users,
+                                           config.num_filters * 4,
+                                           padding_idx=0)
 
     def forward(self, user, candidate_news, clicked_news):
         """
@@ -58,3 +58,20 @@ class LSTUR(torch.nn.Module):
         click_probability = self.click_predictor(candidate_news_vector,
                                                  user_vector)
         return click_probability
+
+    def get_news_vector(self, news):
+        # batch_size, num_filters * 4
+        return self.news_encoder(news)
+
+    def get_user_vector(self, user, clicked_news_vector):
+        """
+        user: batch_size
+        clicked_news_vector: batch_size, num_clicked_news_a_user, num_filters * 4
+        """
+        # batch_size, num_filters * 4
+        user = self.user_embedding(user.to(device))
+        # batch_size, num_filters * 4
+        return self.user_encoder(user, clicked_news_vector)
+
+    def get_prediction(self, news_vector, user_vector):
+        return torch.dot(news_vector, user_vector)
