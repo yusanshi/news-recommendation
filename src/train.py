@@ -26,7 +26,7 @@ def latest_checkpoint(directory):
 
 
 def train():
-    writer = SummaryWriter()
+    writer = SummaryWriter(log_dir=f"./runs/{model_name}")
 
     if not os.path.exists('checkpoint'):
         os.makedirs('checkpoint')
@@ -37,7 +37,25 @@ def train():
     except FileNotFoundError:
         pretrained_word_embedding = None
 
-    model = Model(Config, pretrained_word_embedding).to(device)
+    if model_name == 'DKN':
+        try:
+            pretrained_entity_embedding = torch.from_numpy(
+                np.load('./data/train/pretrained_entity_embedding.npy')).float()
+        except FileNotFoundError:
+            pretrained_entity_embedding = None
+
+        # TODO: currently context is not available
+        try:
+            pretrained_context_embedding = torch.from_numpy(
+                np.load('./data/train/pretrained_context_embedding.npy')).float()
+        except FileNotFoundError:
+            pretrained_context_embedding = None
+
+        model = Model(Config, pretrained_word_embedding,
+                      pretrained_entity_embedding, pretrained_context_embedding).to(device)
+    else:
+        model = Model(Config, pretrained_word_embedding).to(device)
+
     print(model)
 
     dataset = Dataset('data/train/behaviors_parsed.tsv',
@@ -161,6 +179,8 @@ def train():
 def validate(model, dataset):
     """
     Check loss and accuracy of trained model on given validation dataset.
+    Note the metrics in validation will differ greatly with final result on evaluation set. 
+    You should use it for reference only.
     """
     dataloader = DataLoader(dataset,
                             batch_size=Config.batch_size,

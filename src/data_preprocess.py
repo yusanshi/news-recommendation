@@ -363,7 +363,8 @@ if __name__ == '__main__':
 
     print('Transform entity embeddings')
     transform_entity_embedding(path.join(train_dir, 'entity_embedding.vec'),
-                               path.join(train_dir, 'entity_embedding.npy'),
+                               path.join(
+                                   train_dir, 'pretrained_entity_embedding.npy'),
                                path.join(train_dir, 'entity2int.tsv'))
 
     print('\nProcess data for evaluation')

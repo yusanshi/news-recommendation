@@ -13,7 +13,6 @@ class Attention(torch.nn.Module):
     def __init__(self, config):
         super(Attention, self).__init__()
         self.config = config
-        # TODO parameters
         self.dnn = nn.Sequential(
             nn.Linear(
                 len(self.config.window_sizes) * 2 * self.config.num_filters,

@@ -95,7 +95,9 @@ class BehaviorsDataset(Dataset):
 
 @torch.no_grad()
 def inference():
-    model = Model(Config).to(device)
+    # Don't need to load pretrained word embedding
+    # since it will be loaded from checkpoint later
+    model = Model(Config, pretrained_word_embedding=None).to(device)
     checkpoint_path = latest_checkpoint(
         os.path.join('./checkpoint', model_name))
     if checkpoint_path is None:
@@ -114,7 +116,6 @@ def inference():
                                  drop_last=False)
 
     news2vector = {}
-
     with tqdm(total=len(news_dataloader),
               desc="Calculating vectors for news") as pbar:
         for minibatch in news_dataloader:
@@ -207,6 +208,8 @@ if __name__ == '__main__':
         from model.DKN import DKN as Model
         from dataset import DKNDataset as Dataset
         from config import DKNConfig as Config
+        print('Unimplemented!')
+        exit()
     else:
         print("Model name not included!")
         exit()

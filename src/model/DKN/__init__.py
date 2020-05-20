@@ -10,12 +10,12 @@ class DKN(torch.nn.Module):
     Input a candidate news and a list of user clicked news, produce the click probability.
     """
 
-    def __init__(self, config, entity_embedding, context_embedding):
+    def __init__(self, config, pretrained_word_embedding, pretrained_entity_embedding, pretrained_context_embedding):
         super(DKN, self).__init__()
         self.config = config
-        self.kcnn = KCNN(config, entity_embedding, context_embedding)
+        self.kcnn = KCNN(config, pretrained_word_embedding,
+                         pretrained_entity_embedding, pretrained_context_embedding)
         self.attention = Attention(config)
-        # TODO parameters
         self.dnn = nn.Sequential(
             nn.Linear(
                 len(self.config.window_sizes) * 2 * self.config.num_filters,
@@ -26,14 +26,14 @@ class DKN(torch.nn.Module):
         Args:
           candidate_news:
             {
-                "word": [Tensor(batch_size) * num_words_a_news],
-                "entity":[Tensor(batch_size) * num_words_a_news]
+                "title": [Tensor(batch_size) * num_words_title],
+                "title_entity":[Tensor(batch_size) * num_words_title]
             }
           clicked_news:
             [
                 {
-                    "word": [Tensor(batch_size) * num_words_a_news],
-                    "entity":[Tensor(batch_size) * num_words_a_news]
+                    "title": [Tensor(batch_size) * num_words_title],
+                    "title_entity":[Tensor(batch_size) * num_words_title]
                 } * num_clicked_news_a_user
             ]
         Returns:

@@ -35,6 +35,8 @@ class BaseConfig():
     num_users = 1 + 50000
     word_embedding_dim = 300
     category_embedding_dim = 100
+    # Modify the following only if you use another dataset
+    entity_embedding_dim = 100
     # For additive attention
     query_vector_dim = 200
 
@@ -63,9 +65,3 @@ class DKNConfig(BaseConfig):
     # For CNN
     num_filters = 50
     window_sizes = [2, 3, 4]
-    # Modify the following only if you use another dataset
-    entity_embedding_dim = 100
-    # Currently context embedding is not available
-    # If False, only word embedding and entity embedding will be used
-    use_context = os.environ[
-        'CONTEXT'] == '1' if 'CONTEXT' in os.environ else False

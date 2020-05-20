@@ -22,5 +22,4 @@ class UserEncoder(torch.nn.Module):
                                       user.unsqueeze(dim=0))
         else:
             _, last_hidden = self.gru(clicked_news_vector.transpose(0, 1))
-            # TODO
         return last_hidden.squeeze(dim=0)
