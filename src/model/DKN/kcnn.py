@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from model.general.additive_attention import AdditiveAttention
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -10,8 +11,8 @@ class KCNN(torch.nn.Module):
     Knowledge-aware CNN (KCNN) based on Kim CNN.
     Input a news sentence (e.g. its title), produce its embedding vector.
     """
-
-    def __init__(self, config, pretrained_word_embedding, pretrained_entity_embedding, pretrained_context_embedding):
+    def __init__(self, config, pretrained_word_embedding,
+                 pretrained_entity_embedding, pretrained_context_embedding):
         super(KCNN, self).__init__()
         self.config = config
         if pretrained_word_embedding is None:
@@ -35,6 +36,8 @@ class KCNN(torch.nn.Module):
                               (x, self.config.word_embedding_dim))
             for x in self.config.window_sizes
         })
+        self.additive_attention = AdditiveAttention(
+            self.config.query_vector_dim, self.config.num_filters)
 
     def forward(self, news):
         """
@@ -52,9 +55,8 @@ class KCNN(torch.nn.Module):
         word_vector = self.word_embedding(
             torch.stack(news["title"], dim=1).to(device))
         # batch_size, num_words_title, entity_embedding_dim
-        entity_vector = F.embedding(
-            torch.stack(news["title_entity"], dim=1),
-            self.entity_embedding).to(device)
+        entity_vector = F.embedding(torch.stack(news["title_entity"], dim=1),
+                                    self.entity_embedding).to(device)
         if self.context_embedding is not None:
             # batch_size, num_words_title, entity_embedding_dim
             context_vector = F.embedding(
@@ -87,7 +89,7 @@ class KCNN(torch.nn.Module):
                 word_vector, transformed_entity_vector,
                 transformed_context_vector
             ],
-                dim=1)
+                                               dim=1)
         else:
             # batch_size, 2, num_words_title, word_embedding_dim
             multi_channel_vector = torch.stack(
@@ -101,9 +103,12 @@ class KCNN(torch.nn.Module):
             # batch_size, num_filters, num_words_title + 1 - x
             activated = F.relu(convoluted)
             # batch_size, num_filters
-            pooled = activated.max(dim=-1)[0]
-            # or
-            # pooled = F.max_pool1d(activated, activated.size(2)).squeeze(dim=2)
+            # Here we use a additive attention module
+            # instead of pooling in the paper
+            pooled = self.additive_attention(activated.transpose(1, 2))
+            # pooled = activated.max(dim=-1)[0]
+            # # or
+            # # pooled = F.max_pool1d(activated, activated.size(2)).squeeze(dim=2)
             pooled_vectors.append(pooled)
         # batch_size, len(window_sizes) * num_filters
         final_vector = torch.cat(pooled_vectors, dim=1)
