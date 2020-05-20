@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from model.LSTUR.news_encoder import NewsEncoder
 from model.LSTUR.user_encoder import UserEncoder
 from model.general.click_predictor import ClickPredictor
@@ -48,7 +49,9 @@ class LSTUR(torch.nn.Module):
         # batch_size, num_filters * 4
         candidate_news_vector = self.news_encoder(candidate_news)
         # batch_size, num_filters * 4
-        user = self.user_embedding(user.to(device))
+        user = F.dropout(self.user_embedding(user.to(device)),
+                         p=self.config.masking_probability,
+                         training=self.training)
         # batch_size, num_clicked_news_a_user, num_filters * 4
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)

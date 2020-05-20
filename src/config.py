@@ -14,7 +14,7 @@ class BaseConfig():
     # Number of batchs to check loss and accuracy on validation dataset
     num_batches_val_loss_and_acc = 500
     num_batches_save_checkpoint = 100
-    batch_size = 64
+    batch_size = 128
     learning_rate = 0.001
     train_validation_split = (0.9, 0.1)
     num_workers = 4  # Number of workers for data loading
@@ -58,6 +58,7 @@ class LSTURConfig(BaseConfig):
     window_size = 3
     # 'ini' or 'con'. See paper for more detail
     long_short_term_method = 'ini'
+    # TODO 'con' unimplemented currently
     masking_probability = 0.5
 
 
