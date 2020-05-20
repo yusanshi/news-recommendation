@@ -53,9 +53,7 @@ Run.
 ```bash
 # Train and save checkpoint into `checkpoint/{model_name}/` directory
 python3 src/train.py
-# Output `data/test/answer.json` file according to latest checkpoint files
-python3 src/inference.py
-# Comapre `data/test/answer.json` and `data/test/truth.json`, print the result
+# Load latest checkpoint and evaluate on the test set
 python3 src/evaluate.py
 
 # or
@@ -69,8 +67,6 @@ You can visualize the training loss and accuracy with TensorBoard.
 ```bash
 tensorboard --logdir=runs
 ```
-
-Note the metrics in validation will differ greatly with final result on evaluation set. You should use it for reference only.
 
 ## Credits
 

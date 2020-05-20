@@ -11,6 +11,7 @@ class KCNN(torch.nn.Module):
     Knowledge-aware CNN (KCNN) based on Kim CNN.
     Input a news sentence (e.g. its title), produce its embedding vector.
     """
+
     def __init__(self, config, pretrained_word_embedding,
                  pretrained_entity_embedding, pretrained_context_embedding):
         super(KCNN, self).__init__()
@@ -88,8 +89,7 @@ class KCNN(torch.nn.Module):
             multi_channel_vector = torch.stack([
                 word_vector, transformed_entity_vector,
                 transformed_context_vector
-            ],
-                                               dim=1)
+            ], dim=1)
         else:
             # batch_size, 2, num_words_title, word_embedding_dim
             multi_channel_vector = torch.stack(

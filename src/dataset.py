@@ -24,21 +24,23 @@ class BaseDataset(Dataset):
     def __init__(self, behaviors_path, news_path, attributes):
         super(BaseDataset, self).__init__()
         self.attributes = attributes
-        assert all(attribute in ['user', 'category', 'subcategory', 'title', 'abstract',
-                                 'title_entities', 'abstract_entities'] for attribute in attributes)
+        assert all(attribute in [
+            'user', 'category', 'subcategory', 'title', 'abstract',
+            'title_entities', 'abstract_entities'
+        ] for attribute in attributes)
         self.behaviors_parsed = pd.read_table(behaviors_path)
-        self.news_parsed = pd.read_table(news_path,
-                                         index_col='id',
-                                         converters={
-                                             attribute: literal_eval
-                                             for attribute in set(attributes) & ['title', 'abstract', 'title_entities', 'abstract_entities']
-                                         })
+        self.news_parsed = pd.read_table(
+            news_path,
+            index_col='id',
+            converters={
+                attribute: literal_eval
+                for attribute in set(attributes) & set(['title', 'abstract', 'title_entities', 'abstract_entities'])
+            })
 
     def __len__(self):
         return len(self.behaviors_parsed)
 
     def __getitem__(self, idx):
-
         def news2dict(news, df):
             pass
 
@@ -55,7 +57,6 @@ class NRMSDataset(Dataset):
         return len(self.behaviors_parsed)
 
     def __getitem__(self, idx):
-
         def news2dict(news, df):
             return {
                 "title": df.loc[news].title
@@ -67,8 +68,8 @@ class NRMSDataset(Dataset):
         row = self.behaviors_parsed.iloc[idx]
         item["user"] = row.user
         item["clicked"] = row.clicked
-        item["candidate_news"] = news2dict(
-            row.candidate_news, self.news_parsed)
+        item["candidate_news"] = news2dict(row.candidate_news,
+                                           self.news_parsed)
         item["clicked_news"] = [
             news2dict(x, self.news_parsed)
             for x in row.clicked_news.split()[:Config.num_clicked_news_a_user]

@@ -9,7 +9,6 @@ class Attention(torch.nn.Module):
     Input embedding vectors (produced by KCNN) of a candidate news and all of user's clicked news,
     produce final user embedding vectors with respect to the candidate news.
     """
-
     def __init__(self, config):
         super(Attention, self).__init__()
         self.config = config
@@ -33,7 +32,7 @@ class Attention(torch.nn.Module):
         clicked_news_weights = F.softmax(self.dnn(
             torch.cat((clicked_news_vector, candidate_expanded),
                       dim=-1)).squeeze(-1).transpose(0, 1),
-            dim=1)
+                                         dim=1)
 
         # print(clicked_news_weights.max(dim=1))
         # batch_size, len(window_sizes) * num_filters

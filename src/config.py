@@ -1,7 +1,7 @@
 import os
 
-# Currently included model
 model_name = 'NRMS'
+# Currently included model
 assert model_name in ['NRMS', 'NAML', 'LSTUR', 'DKN']
 
 
@@ -11,12 +11,12 @@ class BaseConfig():
     """
     num_batches = 8000  # Number of batches to train
     num_batches_batch_loss = 50  # Number of batchs to show loss
-    # Number of batchs to check loss and accuracy on validation dataset
-    num_batches_val_loss_and_acc = 500
+    # Number of batchs to check metrics on validation dataset
+    num_batches_validate = 200
     num_batches_save_checkpoint = 100
     batch_size = 128
     learning_rate = 0.001
-    train_validation_split = (0.9, 0.1)
+    validation_proportion = 0.1
     num_workers = 4  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
     # Whether try to load checkpoint

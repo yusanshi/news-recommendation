@@ -9,12 +9,13 @@ class DKN(torch.nn.Module):
     Deep knowledge-aware network.
     Input a candidate news and a list of user clicked news, produce the click probability.
     """
-
-    def __init__(self, config, pretrained_word_embedding, pretrained_entity_embedding, pretrained_context_embedding):
+    def __init__(self, config, pretrained_word_embedding,
+                 pretrained_entity_embedding, pretrained_context_embedding):
         super(DKN, self).__init__()
         self.config = config
         self.kcnn = KCNN(config, pretrained_word_embedding,
-                         pretrained_entity_embedding, pretrained_context_embedding)
+                         pretrained_entity_embedding,
+                         pretrained_context_embedding)
         self.attention = Attention(config)
         self.dnn = nn.Sequential(
             nn.Linear(
@@ -48,6 +49,7 @@ class DKN(torch.nn.Module):
                                      clicked_news_vector)
         # Sigmoid is done with BCEWithLogitsLoss
         # batch_size
-        click_probability = self.dnn(torch.cat((user_vector, candidate_news_vector),
-                                               dim=1)).squeeze(dim=1)
+        click_probability = self.dnn(
+            torch.cat((user_vector, candidate_news_vector),
+                      dim=1)).squeeze(dim=1)
         return click_probability

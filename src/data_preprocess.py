@@ -7,16 +7,67 @@ import random
 from nltk.tokenize import word_tokenize
 import numpy as np
 import csv
+from pathlib import Path
+from shutil import copyfile
+
+if model_name == 'NRMS':
+    from config import NRMSConfig as Config
+elif model_name == 'NAML':
+    from config import NAMLConfig as Config
+elif model_name == 'LSTUR':
+    from config import LSTURConfig as Config
+elif model_name == 'DKN':
+    from config import DKNConfig as Config
+else:
+    print("Model name not included!")
+    exit()
 
 
-def parse_behaviors(source, target, user2int_path):
+def parse_behaviors(source, target, val_target, user2int_path):
     print(f"Parse {source}")
-    behaviors = pd.read_table(source,
-                              header=None,
-                              usecols=[0, 2, 3],
-                              names=['user', 'clicked_news', 'impressions'])
+    with open(source, 'r') as f:
+        lines = f.readlines()
+    random.shuffle(lines)
+    with open(val_target, 'w') as f:
+        f.writelines(lines[:int(len(lines) * Config.validation_proportion)])
+
+    behaviors = pd.read_table(
+        source,
+        header=None,
+        usecols=range(4),
+        names=['user', 'time', 'clicked_news', 'impressions'])
+
     behaviors.fillna(' ', inplace=True)
     behaviors.impressions = behaviors.impressions.str.split()
+
+    user2int = {}
+    for row in behaviors.itertuples(index=False):
+        if row.user not in user2int:
+            user2int[row.user] = len(user2int) + 1
+
+    pd.DataFrame(user2int.items(), columns=['user',
+                                            'int']).to_csv(user2int_path,
+                                                           sep='\t',
+                                                           index=False)
+    print(
+        f'Please modify `num_users` in `src/config.py` into 1 + {len(user2int)}'
+    )
+
+    # Drop rows in val_behaviors
+    val_behaviors = pd.read_table(val_target,
+                                  header=None,
+                                  usecols=range(2),
+                                  names=['user', 'time'])
+    behaviors['user-time'] = behaviors['user'] + behaviors['time']
+    val_behaviors['user-time'] = val_behaviors['user'] + val_behaviors['time']
+    behaviors.drop(behaviors[behaviors['user-time'].isin(
+        val_behaviors['user-time'])].index, inplace=True)
+    print(
+        f'Drop {len(val_behaviors)} sessions from training set to be used in validation.'
+    )
+
+    for row in behaviors.itertuples():
+        behaviors.at[row.Index, 'user'] = user2int[row.user]
 
     with tqdm(total=len(behaviors), desc="Balancing data") as pbar:
         for row in behaviors.itertuples():
@@ -29,22 +80,6 @@ def parse_behaviors(source, target, user2int_path):
             behaviors.at[row.Index, 'impressions'] = positive + negative
             pbar.update(1)
 
-    user2int = {}
-    for row in behaviors.itertuples(index=False):
-        if row.user not in user2int:
-            user2int[row.user] = len(user2int) + 1
-
-    for row in behaviors.itertuples():
-        behaviors.at[row.Index, 'user'] = user2int[row.user]
-
-    pd.DataFrame(user2int.items(), columns=['user',
-                                            'int']).to_csv(user2int_path,
-                                                           sep='\t',
-                                                           index=False)
-    print(
-        f'Please modify `num_users` in `src/config.py` into 1 + {len(user2int)}'
-    )
-
     behaviors = behaviors.explode('impressions').reset_index(drop=True)
     behaviors['candidate_news'], behaviors[
         'clicked'] = behaviors.impressions.str.split('-').str
@@ -55,17 +90,22 @@ def parse_behaviors(source, target, user2int_path):
         columns=['user', 'clicked_news', 'candidate_news', 'clicked'])
 
 
-def parse_news(source, target, category2int_path, word2int_path, entity2int_path, mode):
+def parse_news(source, target, category2int_path, word2int_path,
+               entity2int_path, mode):
     print(f"Parse {source}")
-    news = pd.read_table(
-        source,
-        header=None,
-        usecols=[0, 1, 2, 3, 4, 6],
-        names=['id', 'category', 'subcategory', 'title', 'abstract', 'entities'])
+    news = pd.read_table(source,
+                         header=None,
+                         usecols=[0, 1, 2, 3, 4, 6],
+                         names=[
+                             'id', 'category', 'subcategory', 'title',
+                             'abstract', 'entities'
+                         ])
     news.entities.fillna('[]', inplace=True)
     news.fillna(' ', inplace=True)
-    parsed_news = pd.DataFrame(
-        columns=['id', 'category', 'subcategory', 'title', 'abstract', 'title_entities', 'abstract_entities'])
+    parsed_news = pd.DataFrame(columns=[
+        'id', 'category', 'subcategory', 'title', 'abstract', 'title_entities',
+        'abstract_entities'
+    ])
 
     if mode == 'train':
         category2int = {}
@@ -94,8 +134,8 @@ def parse_news(source, target, category2int_path, word2int_path, entity2int_path
                 # Count occurrence time within title and abstract
                 times = len(
                     list(
-                        filter(lambda x: x < len(row.title) + len(row.abstract) + 1,
-                               e['OccurrenceOffsets']))) * e['Confidence']
+                        filter(
+                            lambda x: x < len(row.title) + len(row.abstract) + 1, e['OccurrenceOffsets']))) * e['Confidence']
                 if times > 0:
                     if e['WikidataId'] not in entity2freq:
                         entity2freq[e['WikidataId']] = times
@@ -115,8 +155,7 @@ def parse_news(source, target, category2int_path, word2int_path, entity2int_path
             for row in news.itertuples(index=False):
                 new_row = [
                     row.id,
-                    category2int[row.category],
-                    category2int[row.subcategory],
+                    category2int[row.category], category2int[row.subcategory],
                     [0] * Config.num_words_title,
                     [0] * Config.num_words_abstract,
                     [0] * Config.num_words_title,
@@ -189,9 +228,9 @@ def parse_news(source, target, category2int_path, word2int_path, entity2int_path
                   desc="Parsing categories, words and entities") as pbar:
             for row in news.itertuples(index=False):
                 new_row = [
-                    row.id,
-                    category2int[row.category] if row.category in category2int else 0,
-                    category2int[row.subcategory] if row.subcategory in category2int else 0,
+                    row.id, category2int[row.category] if row.category
+                    in category2int else 0, category2int[row.subcategory]
+                    if row.subcategory in category2int else 0,
                     [0] * Config.num_words_title,
                     [0] * Config.num_words_abstract,
                     [0] * Config.num_words_title,
@@ -299,52 +338,18 @@ def transform_entity_embedding(source, target, entity2int_path):
     np.save(target, entity_embedding_transformed)
 
 
-def transform2json(source, target):
-    """
-    Transform bahaviors file in tsv to json for later evaluation
-    """
-    behaviors = pd.read_table(
-        source,
-        header=None,
-        names=['uid', 'time', 'clicked_news', 'impression'])
-    f = open(target, "w")
-    with tqdm(total=len(behaviors), desc="Transforming tsv to json") as pbar:
-        for row in behaviors.itertuples(index=False):
-            item = {}
-            item['uid'] = row.uid[1:]
-            item['time'] = row.time
-            item['impression'] = {
-                x.split('-')[0][1:]: int(x.split('-')[1])
-                for x in row.impression.split()
-            }
-            f.write(json.dumps(item) + '\n')
-
-            pbar.update(1)
-
-    f.close()
-
-
 if __name__ == '__main__':
-    if model_name == 'NRMS':
-        from config import NRMSConfig as Config
-    elif model_name == 'NAML':
-        from config import NAMLConfig as Config
-    elif model_name == 'LSTUR':
-        from config import LSTURConfig as Config
-    elif model_name == 'DKN':
-        from config import DKNConfig as Config
-    else:
-        print("Model name not included!")
-        exit()
-
     train_dir = './data/train'
+    val_dir = './data/val'
     test_dir = './data/test'
+    Path(val_dir).mkdir(exist_ok=True)
 
     print('Process data for training')
 
     print('Parse behaviors')
     parse_behaviors(path.join(train_dir, 'behaviors.tsv'),
                     path.join(train_dir, 'behaviors_parsed.tsv'),
+                    path.join(val_dir, 'behaviors.tsv'),
                     path.join(train_dir, 'user2int.tsv'))
 
     print('Parse news')
@@ -355,6 +360,10 @@ if __name__ == '__main__':
                path.join(train_dir, 'entity2int.tsv'),
                mode='train')
 
+    # For validation in training
+    copyfile(path.join(train_dir, 'news_parsed.tsv'),
+             path.join(val_dir, 'news_parsed.tsv'))
+
     print('Generate word embedding')
     generate_word_embedding(
         f'./data/glove/glove.6B.{Config.word_embedding_dim}d.txt',
@@ -362,16 +371,12 @@ if __name__ == '__main__':
         path.join(train_dir, 'word2int.tsv'))
 
     print('Transform entity embeddings')
-    transform_entity_embedding(path.join(train_dir, 'entity_embedding.vec'),
-                               path.join(
-                                   train_dir, 'pretrained_entity_embedding.npy'),
-                               path.join(train_dir, 'entity2int.tsv'))
+    transform_entity_embedding(
+        path.join(train_dir, 'entity_embedding.vec'),
+        path.join(train_dir, 'pretrained_entity_embedding.npy'),
+        path.join(train_dir, 'entity2int.tsv'))
 
     print('\nProcess data for evaluation')
-
-    print('Transform test data')
-    transform2json(path.join(test_dir, 'behaviors.tsv'),
-                   path.join(test_dir, 'truth.json'))
 
     print('Parse news')
     parse_news(path.join(test_dir, 'news.tsv'),

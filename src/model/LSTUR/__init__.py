@@ -13,6 +13,7 @@ class LSTUR(torch.nn.Module):
     LSTUR network.
     Input a candidate news and a list of user clicked news, produce the click probability.
     """
+
     def __init__(self, config, pretrained_word_embedding):
         super(LSTUR, self).__init__()
         self.config = config
