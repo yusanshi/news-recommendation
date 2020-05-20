@@ -9,6 +9,8 @@ elif model_name == 'NAML':
     from config import NAMLConfig as Config
 elif model_name == 'LSTUR':
     from config import LSTURConfig as Config
+elif model_name == 'DKN':
+    from config import DKNConfig as Config
 else:
     print("Model name not included!")
     exit()
@@ -206,3 +208,7 @@ class LSTURDataset(Dataset):
         item["clicked_news"].extend([padding] * repeated_times)
 
         return item
+
+
+class DKNDataset(Dataset):
+    pass

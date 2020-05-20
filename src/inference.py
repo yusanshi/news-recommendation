@@ -149,7 +149,7 @@ def inference():
                                 dim=0)
                     for news_list in minibatch["clicked_news"]
                 ],
-                                                  dim=0).transpose(0, 1)
+                    dim=0).transpose(0, 1)
                 if model_name == 'LSTUR':
                     user_vector = model.get_user_vector(
                         minibatch['user'], clicked_news_vector)
@@ -203,6 +203,10 @@ if __name__ == '__main__':
         from model.LSTUR import LSTUR as Model
         from dataset import LSTURDataset as Dataset
         from config import LSTURConfig as Config
+    elif model_name == 'DKN':
+        from model.DKN import DKN as Model
+        from dataset import DKNDataset as Dataset
+        from config import DKNConfig as Config
     else:
         print("Model name not included!")
         exit()

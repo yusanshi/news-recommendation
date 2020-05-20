@@ -2,11 +2,12 @@
 
 Currently included model:
 
-| Model | Full name                                                    | Paper                                         |
-| ----- | ------------------------------------------------------------ | --------------------------------------------- |
-| NRMS  | Neural News Recommendation with Multi-Head Self-Attention    | https://www.aclweb.org/anthology/D19-1671/    |
-| NAML  | Neural News Recommendation with Attentive Multi-View Learning | https://arxiv.org/abs/1907.05576              |
-| LSTUR | Neural News Recommendation with Long- and Short-term User Representations | https://www.aclweb.org/anthology/P19-1033.pdf |
+| Model | Full name                                                    | Paper                                              |
+| ----- | ------------------------------------------------------------ | -------------------------------------------------- |
+| NRMS  | Neural News Recommendation with Multi-Head Self-Attention    | https://www.aclweb.org/anthology/D19-1671/         |
+| NAML  | Neural News Recommendation with Attentive Multi-View Learning | https://arxiv.org/abs/1907.05576                   |
+| LSTUR | Neural News Recommendation with Long- and Short-term User Representations | https://www.aclweb.org/anthology/P19-1033.pdf      |
+| DKN   | Deep Knowledge-Aware Network for News Recommendation         | https://dl.acm.org/doi/abs/10.1145/3178876.3186175 |
 
 ## Get started
 
@@ -18,18 +19,17 @@ cd NewsRecommendation
 pip3 install -r requirements.txt
 ```
 
-Download GloVe pre-trained word embedding.
-```
+Download and preprocess the data.
+
+```bash
 mkdir data && cd data
+# Download GloVe pre-trained word embedding
 wget https://nlp.stanford.edu/data/glove.6B.zip
 sudo apt install unzip
 unzip glove.6B.zip -d glove
 rm glove.6B.zip
-```
 
-Download the dataset.
-
-```bash
+# Download MIND-small dataset
 # By downloading the dataset, you agree to the [Microsoft Research License Terms](https://go.microsoft.com/fwlink/?LinkID=206977). For more detail about the dataset, see https://msnews.github.io/.
 wget https://mind201910small.blob.core.windows.net/release/MINDsmall_train.zip https://mind201910small.blob.core.windows.net/release/MINDsmall_dev.zip
 unzip MINDsmall_train.zip -d train

@@ -33,7 +33,7 @@ def train():
 
     try:
         pretrained_word_embedding = torch.from_numpy(
-            np.load('./data/pretrained_word_embedding.npy')).float()
+            np.load('./data/train/pretrained_word_embedding.npy')).float()
     except FileNotFoundError:
         pretrained_word_embedding = None
 
@@ -231,6 +231,10 @@ if __name__ == '__main__':
         from model.LSTUR import LSTUR as Model
         from dataset import LSTURDataset as Dataset
         from config import LSTURConfig as Config
+    elif model_name == 'DKN':
+        from model.DKN import DKN as Model
+        from dataset import DKNDataset as Dataset
+        from config import DKNConfig as Config
     else:
         print("Model name not included!")
         exit()

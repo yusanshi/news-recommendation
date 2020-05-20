@@ -2,7 +2,7 @@ import os
 
 # Currently included model
 model_name = 'NRMS'
-assert model_name in ['NRMS', 'NAML', 'LSTUR']
+assert model_name in ['NRMS', 'NAML', 'LSTUR', 'DKN']
 
 
 class BaseConfig():
@@ -25,6 +25,8 @@ class BaseConfig():
     num_words_title = 20
     num_words_abstract = 50
     word_freq_threshold = 3
+    entity_freq_threshold = 3
+    entity_confidence_threshold = 0.5
     negative_sampling_ratio = 4
     dropout_probability = 0.2
     # Modify the following by the output of `src/dataprocess.py`
@@ -32,9 +34,9 @@ class BaseConfig():
     num_categories = 1 + 274
     num_users = 1 + 50000
     word_embedding_dim = 300
+    category_embedding_dim = 100
     # For additive attention
     query_vector_dim = 200
-    category_embedding_dim = 100
 
 
 class NRMSConfig(BaseConfig):
@@ -55,3 +57,15 @@ class LSTURConfig(BaseConfig):
     # 'ini' or 'con'. See paper for more detail
     long_short_term_method = 'ini'
     masking_probability = 0.5
+
+
+class DKNConfig(BaseConfig):
+    # For CNN
+    num_filters = 50
+    window_sizes = [2, 3, 4]
+    # Modify the following only if you use another dataset
+    entity_embedding_dim = 100
+    # Currently context embedding is not available
+    # If False, only word embedding and entity embedding will be used
+    use_context = os.environ[
+        'CONTEXT'] == '1' if 'CONTEXT' in os.environ else False
