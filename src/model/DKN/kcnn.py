@@ -45,7 +45,7 @@ class KCNN(torch.nn.Module):
           news:
             {
                 "title": [Tensor(batch_size) * num_words_title],
-                "title_entity":[Tensor(batch_size) * num_words_title]
+                "title_entities":[Tensor(batch_size) * num_words_title]
             }
 
         Returns:
@@ -55,12 +55,12 @@ class KCNN(torch.nn.Module):
         word_vector = self.word_embedding(
             torch.stack(news["title"], dim=1).to(device))
         # batch_size, num_words_title, entity_embedding_dim
-        entity_vector = F.embedding(torch.stack(news["title_entity"], dim=1),
+        entity_vector = F.embedding(torch.stack(news["title_entities"], dim=1),
                                     self.entity_embedding).to(device)
         if self.context_embedding is not None:
             # batch_size, num_words_title, entity_embedding_dim
             context_vector = F.embedding(
-                torch.stack(news["title_entity"], dim=1),
+                torch.stack(news["title_entities"], dim=1),
                 self.context_embedding).to(device)
 
         # The abbreviations are the same as those in paper

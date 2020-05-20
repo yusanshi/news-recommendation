@@ -27,13 +27,13 @@ class DKN(torch.nn.Module):
           candidate_news:
             {
                 "title": [Tensor(batch_size) * num_words_title],
-                "title_entity":[Tensor(batch_size) * num_words_title]
+                "title_entities":[Tensor(batch_size) * num_words_title]
             }
           clicked_news:
             [
                 {
                     "title": [Tensor(batch_size) * num_words_title],
-                    "title_entity":[Tensor(batch_size) * num_words_title]
+                    "title_entities":[Tensor(batch_size) * num_words_title]
                 } * num_clicked_news_a_user
             ]
         Returns:
