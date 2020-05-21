@@ -9,6 +9,7 @@ class Attention(torch.nn.Module):
     Input embedding vectors (produced by KCNN) of a candidate news and all of user's clicked news,
     produce final user embedding vectors with respect to the candidate news.
     """
+
     def __init__(self, config):
         super(Attention, self).__init__()
         self.config = config
@@ -21,7 +22,7 @@ class Attention(torch.nn.Module):
         """
         Args:
           candidate_news_vector: batch_size, len(window_sizes) * num_filters
-          clicked_news_vector: num_clicked_news_a_user, batch_size, len(window_sizes) * num_filters
+          clicked_news_vector: batch_size, num_clicked_news_a_user, len(window_sizes) * num_filters
         Returns:
           user_vector: batch_size, len(window_sizes) * num_filters
         """
@@ -30,12 +31,12 @@ class Attention(torch.nn.Module):
             self.config.num_clicked_news_a_user, -1, -1)
         # batch_size, num_clicked_news_a_user
         clicked_news_weights = F.softmax(self.dnn(
-            torch.cat((clicked_news_vector, candidate_expanded),
+            torch.cat((clicked_news_vector.transpose(0, 1), candidate_expanded),
                       dim=-1)).squeeze(-1).transpose(0, 1),
-                                         dim=1)
+            dim=1)
 
         # print(clicked_news_weights.max(dim=1))
         # batch_size, len(window_sizes) * num_filters
         user_vector = torch.bmm(clicked_news_weights.unsqueeze(1),
-                                clicked_news_vector.transpose(0, 1)).squeeze(1)
+                                clicked_news_vector).squeeze(1)
         return user_vector

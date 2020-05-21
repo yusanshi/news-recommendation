@@ -21,8 +21,6 @@ elif model_name == 'LSTUR':
 elif model_name == 'DKN':
     from model.DKN import DKN as Model
     from config import DKNConfig as Config
-    print('Unimplemented!')
-    exit()
 else:
     print("Model name not included!")
     exit()
@@ -98,7 +96,9 @@ class NewsDataset(Dataset):
         self.news_parsed = pd.read_table(news_path,
                                          converters={
                                              'title': literal_eval,
-                                             'abstract': literal_eval
+                                             'abstract': literal_eval,
+                                             'title_entities': literal_eval,
+                                             'abstract_entities': literal_eval
                                          })
 
     def __len__(self):
@@ -112,6 +112,8 @@ class NewsDataset(Dataset):
             "subcategory": row.subcategory,
             "title": row.title,
             "abstract": row.abstract,
+            "title_entities": row.title_entities,
+            "abstract_entities": row.abstract_entities
         }
         return item
 
@@ -273,7 +275,25 @@ if __name__ == '__main__':
     print(f'Inferencing model {model_name}')
     # Don't need to load pretrained word embedding
     # since it will be loaded from checkpoint later
-    model = Model(Config, pretrained_word_embedding=None).to(device)
+    pretrained_word_embedding = None
+    if model_name == 'DKN':
+        try:
+            pretrained_entity_embedding = torch.from_numpy(
+                np.load(
+                    './data/train/pretrained_entity_embedding.npy')).float()
+        except FileNotFoundError:
+            pretrained_entity_embedding = None
+        try:
+            pretrained_context_embedding = torch.from_numpy(
+                np.load(
+                    './data/train/pretrained_context_embedding.npy')).float()
+        except FileNotFoundError:
+            pretrained_context_embedding = None
+        model = Model(Config, pretrained_word_embedding,
+                      pretrained_entity_embedding,
+                      pretrained_context_embedding).to(device)
+    else:
+        model = Model(Config, pretrained_word_embedding).to(device)
     from train import latest_checkpoint  # Avoid circular imports
     checkpoint_path = latest_checkpoint(
         os.path.join('./checkpoint', model_name))
