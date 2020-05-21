@@ -45,12 +45,12 @@ class KCNN(torch.nn.Module):
         Args:
           news:
             {
-                "title": [Tensor(batch_size) * num_words_title],
-                "title_entities":[Tensor(batch_size) * num_words_title]
+                "title": Tensor(batch_size) * num_words_title,
+                "title_entities": Tensor(batch_size) * num_words_title
             }
 
         Returns:
-          final_vector: batch_size, len(window_sizes) * num_filters
+            final_vector: batch_size, len(window_sizes) * num_filters
         """
         # batch_size, num_words_title, word_embedding_dim
         word_vector = self.word_embedding(
@@ -90,7 +90,8 @@ class KCNN(torch.nn.Module):
             multi_channel_vector = torch.stack([
                 word_vector, transformed_entity_vector,
                 transformed_context_vector
-            ], dim=1)
+            ],
+                dim=1)
         else:
             # batch_size, 2, num_words_title, word_embedding_dim
             multi_channel_vector = torch.stack(

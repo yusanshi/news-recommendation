@@ -24,6 +24,14 @@ else:
 
 
 def parse_behaviors(source, target, val_target, user2int_path):
+    """
+    Parse behaviors file in training set.
+    Args:
+        source: source behaviors file
+        target: target behaviors file
+        val_target: target behaviors file used for validation split from training set
+        user2int_path: path for saving user2int file
+    """
     print(f"Parse {source}")
     with open(source, 'r') as f:
         lines = f.readlines()
@@ -61,7 +69,8 @@ def parse_behaviors(source, target, val_target, user2int_path):
     behaviors['user-time'] = behaviors['user'] + behaviors['time']
     val_behaviors['user-time'] = val_behaviors['user'] + val_behaviors['time']
     behaviors.drop(behaviors[behaviors['user-time'].isin(
-        val_behaviors['user-time'])].index, inplace=True)
+        val_behaviors['user-time'])].index,
+        inplace=True)
     print(
         f'Drop {len(val_behaviors)} sessions from training set to be used in validation.'
     )
@@ -92,6 +101,16 @@ def parse_behaviors(source, target, val_target, user2int_path):
 
 def parse_news(source, target, category2int_path, word2int_path,
                entity2int_path, mode):
+    """
+    Parse news for training set and test set
+    Args:
+        source: source news file
+        target: target news file
+        if mode == 'train':
+            category2int_path, word2int_path, entity2int_path: Path to save
+        elif mode == 'test':
+            category2int_path, word2int_path, entity2int_path: Path to load from
+    """
     print(f"Parse {source}")
     news = pd.read_table(source,
                          header=None,
@@ -135,7 +154,8 @@ def parse_news(source, target, category2int_path, word2int_path,
                 times = len(
                     list(
                         filter(
-                            lambda x: x < len(row.title) + len(row.abstract) + 1, e['OccurrenceOffsets']))) * e['Confidence']
+                            lambda x: x < len(row.title) + len(row.abstract) +
+                            1, e['OccurrenceOffsets']))) * e['Confidence']
                 if times > 0:
                     if e['WikidataId'] not in entity2freq:
                         entity2freq[e['WikidataId']] = times
@@ -228,8 +248,9 @@ def parse_news(source, target, category2int_path, word2int_path,
                   desc="Parsing categories, words and entities") as pbar:
             for row in news.itertuples(index=False):
                 new_row = [
-                    row.id, category2int[row.category] if row.category
-                    in category2int else 0, category2int[row.subcategory]
+                    row.id, category2int[row.category]
+                    if row.category in category2int else 0,
+                    category2int[row.subcategory]
                     if row.subcategory in category2int else 0,
                     [0] * Config.num_words_title,
                     [0] * Config.num_words_abstract,
@@ -281,6 +302,14 @@ def parse_news(source, target, category2int_path, word2int_path,
 
 
 def generate_word_embedding(source, target, word2int_path):
+    """
+    Generate from pretrained word embedding file
+    If a word not in embedding file, initial its embedding by N(0, 1)
+    Args:
+        source: path of pretrained word embedding file, e.g. glove.6B.300d.txt
+        target: path for saving word embedding. Will be saved in numpy format
+        word2int_path: vocabulary file when words in it will be searched in pretrained embedding file
+    """
     # na_filter=False is needed since nan is also a valid word
     word2int = dict(
         pd.read_table(word2int_path, na_filter=False).values.tolist())
@@ -315,14 +344,12 @@ def transform_entity_embedding(source, target, entity2int_path):
     """
     Args:
         source: path of embedding file
-            example:
-                Q100	-0.075855	-0.164252	0.128812	-0.022738	-0.127613	-0.160166	0.138481	-0.135568	0.117921	-0.003037	0.127557	0.142511	0.084117	-0.004320	-0.090240	0.009786	0.013588	0.003356	-0.066014	-0.098590	-0.088168	0.055409	-0.004417	0.118718	-0.035986	-0.010574	0.060249	0.064847	0.106534	0.015566	-0.077538	0.027226	0.040080	-0.132547	-0.015346	0.048049	-0.139377	-0.152344	-0.050292	0.022452	-0.122296	-0.026120	0.008042	-0.059975	-0.132461	-0.102174	-0.122510	0.008978	-0.011055	0.114250	-0.109533	0.012790	0.120282	0.031591	0.043915	-0.014192	-0.000558	-0.009249	-0.023576	-0.054018	-0.143273	0.131889	0.090060	0.056647	0.062646	-0.198711	-0.162954	-0.160493	-0.042409	-0.043214	-0.117995	-0.160036	0.090786	0.129228	-0.118732	-0.022712	-0.001741	0.156582	0.011148	0.027286	0.047676	0.002435	0.019395	0.140718	0.139035	-0.081709	0.034342	0.059993	-0.141031	-0.072964	-0.104429	0.084221	0.036348	-0.128924	-0.228023	-0.180280	-0.025696	-0.141512	0.037383	0.085674
         target: path of transformed embedding file in numpy format
         entity2int_path
     """
     entity_embedding = pd.read_table(source, header=None)
-    entity_embedding['vector'] = entity_embedding.iloc[:,
-                                                       1:101].values.tolist()
+    entity_embedding['vector'] = entity_embedding.iloc[:, 1:101].values.tolist(
+    )
     entity_embedding = entity_embedding[[0, 'vector'
                                          ]].rename(columns={0: "entity"})
 

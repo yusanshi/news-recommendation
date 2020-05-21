@@ -26,26 +26,26 @@ class DKN(torch.nn.Module):
     def forward(self, candidate_news, clicked_news):
         """
         Args:
-          candidate_news:
-            {
-                "title": [Tensor(batch_size) * num_words_title],
-                "title_entities":[Tensor(batch_size) * num_words_title]
-            }
-          clicked_news:
-            [
+            candidate_news:
                 {
-                    "title": [Tensor(batch_size) * num_words_title],
-                    "title_entities":[Tensor(batch_size) * num_words_title]
-                } * num_clicked_news_a_user
-            ]
+                    "title": Tensor(batch_size) * num_words_title,
+                    "title_entities": Tensor(batch_size) * num_words_title
+                }
+            clicked_news:
+                [
+                    {
+                        "title": Tensor(batch_size) * num_words_title,
+                        "title_entities": Tensor(batch_size) * num_words_title
+                    } * num_clicked_news_a_user
+                ]
         Returns:
-          click_probability: batch_size
+            click_probability: batch_size
         """
         # batch_size, len(window_sizes) * num_filters
         candidate_news_vector = self.kcnn(candidate_news)
         # batch_size, num_clicked_news_a_user, len(window_sizes) * num_filters
-        clicked_news_vector = torch.stack(
-            [self.kcnn(x) for x in clicked_news], dim=1)
+        clicked_news_vector = torch.stack([self.kcnn(x) for x in clicked_news],
+                                          dim=1)
         # batch_size, len(window_sizes) * num_filters
         user_vector = self.attention(candidate_news_vector,
                                      clicked_news_vector)
@@ -57,20 +57,36 @@ class DKN(torch.nn.Module):
         return click_probability
 
     def get_news_vector(self, news):
+        """
+        Args:
+            news:
+                {
+                    "title": Tensor(batch_size) * num_words_title,
+                    "title_entities": Tensor(batch_size) * num_words_title
+                }
+        Returns:
+            (shape) batch_size, len(window_sizes) * num_filters
+        """
         # batch_size, len(window_sizes) * num_filters
         return self.kcnn(news)
 
     def get_user_vector(self, clicked_news_vector):
         """
-        clicked_news_vector: batch_size, num_clicked_news_a_user, len(window_sizes) * num_filters
+        Args:
+            clicked_news_vector: batch_size, num_clicked_news_a_user, len(window_sizes) * num_filters
+        Returns:
+            (shape) batch_size, num_clicked_news_a_user, len(window_sizes) * num_filters
         """
         # batch_size, num_clicked_news_a_user, len(window_sizes) * num_filters
         return clicked_news_vector
 
     def get_prediction(self, candidate_news_vector, clicked_news_vector):
         """
-        candidate_news_vector: len(window_sizes) * num_filters
-        clicked_news_vector: num_clicked_news_a_user, len(window_sizes) * num_filters
+        Args:
+            candidate_news_vector: len(window_sizes) * num_filters
+            clicked_news_vector: num_clicked_news_a_user, len(window_sizes) * num_filters
+        Returns:
+            click_probability: 0-dim tensor
         """
         # 1, len(window_sizes) * num_filters
         user_vector = self.attention(candidate_news_vector.unsqueeze(dim=0),

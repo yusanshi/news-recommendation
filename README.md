@@ -1,6 +1,6 @@
-# News Recommendation System
+# News Recommendation
 
-Currently included model:
+The repository currently includes the following models.
 
 | Model | Full name                                                    | Paper                                              |
 | ----- | ------------------------------------------------------------ | -------------------------------------------------- |
@@ -67,6 +67,16 @@ You can visualize the training loss and accuracy with TensorBoard.
 ```bash
 tensorboard --logdir=runs
 ```
+
+## Results
+
+| Model | AUC  | nMRR | nDCG@5 | nDCG@10 |
+| ----- | ---- | ---- | ------ | ------- |
+| NRMS  |      |      |        |         |
+| NAML  |      |      |        |         |
+| LSTUR |      |      |        |         |
+| DKN   |      |      |        |         |
+
 
 ## Credits
 

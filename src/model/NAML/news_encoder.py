@@ -49,8 +49,8 @@ class NewsEncoder(torch.nn.Module):
                 {
                     "category": Tensor(batch_size),
                     "subcategory": Tensor(batch_size),
-                    "title": [Tensor(batch_size) * num_words_title],
-                    "abstract": [Tensor(batch_size) * num_words_abstract]
+                    "title": Tensor(batch_size) * num_words_title,
+                    "abstract": Tensor(batch_size) * num_words_abstract
                 }
         Returns:
             (shape) batch_size, num_filters
@@ -77,8 +77,8 @@ class NewsEncoder(torch.nn.Module):
         # batch_size, num_words_title, word_embedding_dim
         title_vector = F.dropout(self.word_embedding(
             torch.stack(news['title'], dim=1).to(device)),
-                                 p=self.config.dropout_probability,
-                                 training=self.training)
+            p=self.config.dropout_probability,
+            training=self.training)
         # batch_size, num_filters, num_words_title
         convoluted_title_vector = self.title_CNN(
             title_vector.unsqueeze(dim=1)).squeeze(dim=3)
@@ -95,8 +95,8 @@ class NewsEncoder(torch.nn.Module):
         # batch_size, num_words_abstract, word_embedding_dim
         abstract_vector = F.dropout(self.word_embedding(
             torch.stack(news['abstract'], dim=1).to(device)),
-                                    p=self.config.dropout_probability,
-                                    training=self.training)
+            p=self.config.dropout_probability,
+            training=self.training)
         # batch_size, num_filters, num_words_abstract
         convoluted_abstract_vector = self.abstract_CNN(
             abstract_vector.unsqueeze(dim=1)).squeeze(dim=3)
@@ -114,7 +114,7 @@ class NewsEncoder(torch.nn.Module):
             activated_category_vector, activated_subcategory_vector,
             weighted_title_vector, weighted_abstract_vector
         ],
-                                          dim=1)
+            dim=1)
         # batch_size, num_filters
         news_vector = self.final_attention(stacked_news_vector)
         return news_vector

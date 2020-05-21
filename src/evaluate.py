@@ -91,6 +91,10 @@ def score(truth_f, sub_f):
 
 
 class NewsDataset(Dataset):
+    """
+    Load news for evaluation.
+    """
+
     def __init__(self, news_path):
         super(NewsDataset, self).__init__()
         self.news_parsed = pd.read_table(news_path,
@@ -119,6 +123,10 @@ class NewsDataset(Dataset):
 
 
 class UserDataset(Dataset):
+    """
+    Load users for evaluation, duplicated rows will be dropped
+    """
+
     def __init__(self, behaviors_path, user2int_path):
         super(UserDataset, self).__init__()
         self.behaviors = pd.read_table(behaviors_path,
@@ -154,6 +162,10 @@ class UserDataset(Dataset):
 
 
 class BehaviorsDataset(Dataset):
+    """
+    Load behaviors for evaluation, (user, time) pair as session
+    """
+
     def __init__(self, behaviors_path):
         super(BehaviorsDataset, self).__init__()
         self.behaviors = pd.read_table(behaviors_path,
@@ -177,6 +189,16 @@ class BehaviorsDataset(Dataset):
 
 @torch.no_grad()
 def evaluate(model, directory):
+    """
+    Evaluate model on target directory.
+    Args:
+        directory: the directory that contains two files (behaviors.tsv, news_parsed.tsv)
+    Returns:
+        AUC
+        nMRR
+        nDCG@5
+        nDCG@10
+    """
     news_dataset = NewsDataset(os.path.join(directory, 'news_parsed.tsv'))
     news_dataloader = DataLoader(news_dataset,
                                  batch_size=Config.batch_size,
@@ -218,7 +240,8 @@ def evaluate(model, directory):
                     torch.stack([news2vector[x].to(device) for x in news_list],
                                 dim=0)
                     for news_list in minibatch["clicked_news"]
-                ], dim=0).transpose(0, 1)
+                ],
+                    dim=0).transpose(0, 1)
                 if model_name == 'LSTUR':
                     user_vector = model.get_user_vector(
                         minibatch['user'], clicked_news_vector)
@@ -272,7 +295,7 @@ def evaluate(model, directory):
 
 if __name__ == '__main__':
     print('Using device:', device)
-    print(f'Inferencing model {model_name}')
+    print(f'Evaluating model {model_name}')
     # Don't need to load pretrained word embedding
     # since it will be loaded from checkpoint later
     pretrained_word_embedding = None

@@ -32,16 +32,16 @@ class LSTUR(torch.nn.Module):
                 {
                     "category": Tensor(batch_size),
                     "subcategory": Tensor(batch_size),
-                    "title": [Tensor(batch_size) * num_words_title],
-                    "abstract": [Tensor(batch_size) * num_words_abstract]
+                    "title": Tensor(batch_size) * num_words_title,
+                    "abstract": Tensor(batch_size) * num_words_abstract
                 }
             clicked_news:
                 [
                     {
                         "category": Tensor(batch_size),
                         "subcategory": Tensor(batch_size),
-                        "title": [Tensor(batch_size) * num_words_title],
-                        "abstract": [Tensor(batch_size) * num_words_abstract]
+                        "title": Tensor(batch_size) * num_words_title,
+                        "abstract": Tensor(batch_size) * num_words_abstract
                     } * num_clicked_news_a_user
                 ]
         Returns:
@@ -69,8 +69,11 @@ class LSTUR(torch.nn.Module):
 
     def get_user_vector(self, user, clicked_news_vector):
         """
-        user: batch_size
-        clicked_news_vector: batch_size, num_clicked_news_a_user, num_filters * 4
+        Args:
+            user: batch_size
+            clicked_news_vector: batch_size, num_clicked_news_a_user, num_filters * 4
+        Returns:
+
         """
         # batch_size, num_filters * 4
         user = self.user_embedding(user.to(device))
@@ -79,7 +82,10 @@ class LSTUR(torch.nn.Module):
 
     def get_prediction(self, news_vector, user_vector):
         """
-        news_vector: num_filters * 4
-        user_vector: num_filters * 4
+        Args:
+            news_vector: num_filters * 4
+            user_vector: num_filters * 4
+        Returns:
+            click_probability: 0-dim tensor
         """
         return torch.dot(news_vector, user_vector)

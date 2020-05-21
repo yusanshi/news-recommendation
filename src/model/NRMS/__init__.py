@@ -20,12 +20,16 @@ class NRMS(torch.nn.Module):
     def forward(self, candidate_news, clicked_news):
         """
         Args:
-          candidate_news: {"title":Tensor(batch_size) * num_words_title},
-          clicked_news: [{
-            "title":[Tensor(batch_size) * num_words_title]
-            } * num_clicked_news_a_user
-          ]
-
+            candidate_news:
+                {
+                    "title": Tensor(batch_size) * num_words_title
+                },
+            clicked_news:
+                [
+                    {
+                        "title":Tensor(batch_size) * num_words_title
+                    } * num_clicked_news_a_user
+                ]
         Returns:
           click_probability: batch_size
         """
@@ -43,21 +47,33 @@ class NRMS(torch.nn.Module):
 
     def get_news_vector(self, news):
         """
-        news: {"title": Tensor(batch_size) * num_words_title}
+        Args:
+            news:
+                {
+                    "title": Tensor(batch_size) * num_words_title
+                },
+        Returns:
+            (shape) batch_size, word_embedding_dim
         """
         # batch_size, word_embedding_dim
         return self.news_encoder(news)
 
     def get_user_vector(self, clicked_news_vector):
         """
-        clicked_news_vector: batch_size, num_clicked_news_a_user, word_embedding_dim
+        Args:
+            clicked_news_vector: batch_size, num_clicked_news_a_user, word_embedding_dim
+        Returns:
+            (shape) batch_size, word_embedding_dim
         """
         # batch_size, word_embedding_dim
         return self.user_encoder(clicked_news_vector)
 
     def get_prediction(self, news_vector, user_vector):
         """
-        news_vector: word_embedding_dim
-        user_vector: word_embedding_dim
+        Args:
+            news_vector: word_embedding_dim
+            user_vector: word_embedding_dim
+        Returns:
+            click_probability: 0-dim tensor
         """
         return torch.dot(news_vector, user_vector)

@@ -21,18 +21,19 @@ class Attention(torch.nn.Module):
     def forward(self, candidate_news_vector, clicked_news_vector):
         """
         Args:
-          candidate_news_vector: batch_size, len(window_sizes) * num_filters
-          clicked_news_vector: batch_size, num_clicked_news_a_user, len(window_sizes) * num_filters
+            candidate_news_vector: batch_size, len(window_sizes) * num_filters
+            clicked_news_vector: batch_size, num_clicked_news_a_user, len(window_sizes) * num_filters
         Returns:
-          user_vector: batch_size, len(window_sizes) * num_filters
+            user_vector: batch_size, len(window_sizes) * num_filters
         """
         # num_clicked_news_a_user, batch_size, len(window_sizes) * num_filters
         candidate_expanded = candidate_news_vector.expand(
             self.config.num_clicked_news_a_user, -1, -1)
         # batch_size, num_clicked_news_a_user
         clicked_news_weights = F.softmax(self.dnn(
-            torch.cat((clicked_news_vector.transpose(0, 1), candidate_expanded),
-                      dim=-1)).squeeze(-1).transpose(0, 1),
+            torch.cat(
+                (clicked_news_vector.transpose(0, 1), candidate_expanded),
+                dim=-1)).squeeze(-1).transpose(0, 1),
             dim=1)
 
         # print(clicked_news_weights.max(dim=1))
