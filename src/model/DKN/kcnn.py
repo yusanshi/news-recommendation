@@ -65,11 +65,12 @@ class KCNN(torch.nn.Module):
                 self.context_embedding).to(device)
 
         # The abbreviations are the same as those in paper
-        b = self.config.batch_size
+        b = word_vector.size(0)  # TODO
         n = self.config.num_words_title
         d = self.config.word_embedding_dim
         k = self.config.entity_embedding_dim
 
+        # TODO TOO ugly!
         # batch_size, num_words_title, word_embedding_dim
         transformed_entity_vector = torch.tanh(
             torch.add(

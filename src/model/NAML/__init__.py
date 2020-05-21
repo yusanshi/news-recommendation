@@ -9,6 +9,7 @@ class NAML(torch.nn.Module):
     NAML network.
     Input a candidate news and a list of user clicked news, produce the click probability.
     """
+
     def __init__(self, config, pretrained_word_embedding):
         super(NAML, self).__init__()
         self.config = config
@@ -62,4 +63,8 @@ class NAML(torch.nn.Module):
         return self.user_encoder(clicked_news_vector)
 
     def get_prediction(self, news_vector, user_vector):
+        """
+        news_vector: num_filters
+        user_vector: num_filters
+        """
         return torch.dot(news_vector, user_vector)

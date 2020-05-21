@@ -78,4 +78,8 @@ class LSTUR(torch.nn.Module):
         return self.user_encoder(user, clicked_news_vector)
 
     def get_prediction(self, news_vector, user_vector):
+        """
+        news_vector: num_filters * 4
+        user_vector: num_filters * 4
+        """
         return torch.dot(news_vector, user_vector)

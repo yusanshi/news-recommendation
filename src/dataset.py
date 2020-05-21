@@ -17,10 +17,6 @@ else:
 
 
 class BaseDataset(Dataset):
-    """
-    TODO
-    """
-
     def __init__(self, behaviors_path, news_path, attributes):
         super(BaseDataset, self).__init__()
         self.attributes = attributes
@@ -36,22 +32,19 @@ class BaseDataset(Dataset):
                 attribute: literal_eval
                 for attribute in set(attributes) & set(['title', 'abstract', 'title_entities', 'abstract_entities'])
             })
-
-    def __len__(self):
-        return len(self.behaviors_parsed)
-
-    def __getitem__(self, idx):
-        def news2dict(news, df):
-            pass
-
-
-class NRMSDataset(Dataset):
-    def __init__(self, behaviors_path, news_path):
-        super(NRMSDataset, self).__init__()
-        self.behaviors_parsed = pd.read_table(behaviors_path)
-        self.news_parsed = pd.read_table(news_path,
-                                         index_col='id',
-                                         converters={'title': literal_eval})
+        self.padding = {}
+        if 'category' in attributes:
+            self.padding['category'] = 0
+        if 'subcategory' in attributes:
+            self.padding['subcategory'] = 0
+        if 'title' in attributes:
+            self.padding['title'] = [0] * Config.num_words_title
+        if 'abstract' in attributes:
+            self.padding['abstract'] = [0] * Config.num_words_abstract
+        if 'title_entities' in attributes:
+            self.padding['title_entities'] = [0] * Config.num_words_title
+        if 'abstract_entities' in attributes:
+            self.padding['abstract_entities'] = [0] * Config.num_words_abstract
 
     def __len__(self):
         return len(self.behaviors_parsed)
@@ -59,14 +52,14 @@ class NRMSDataset(Dataset):
     def __getitem__(self, idx):
         def news2dict(news, df):
             return {
-                "title": df.loc[news].title
-            } if news in df.index else {
-                "title": [0] * Config.num_words_title
-            }
+                key: df.loc[news][key]
+                for key in self.attributes if key != 'user'
+            } if news in df.index else self.padding
 
         item = {}
         row = self.behaviors_parsed.iloc[idx]
-        item["user"] = row.user
+        if 'user' in self.attributes:
+            item['user'] = row.user
         item["clicked"] = row.clicked
         item["candidate_news"] = news2dict(row.candidate_news,
                                            self.news_parsed)
@@ -74,222 +67,37 @@ class NRMSDataset(Dataset):
             news2dict(x, self.news_parsed)
             for x in row.clicked_news.split()[:Config.num_clicked_news_a_user]
         ]
-
-        padding = {"title": [0] * Config.num_words_title}
-
         repeated_times = Config.num_clicked_news_a_user - \
             len(item["clicked_news"])
         assert repeated_times >= 0
-        item["clicked_news"].extend([padding] * repeated_times)
+        item["clicked_news"].extend([self.padding] * repeated_times)
+
         return item
 
 
-class NAMLDataset(Dataset):
+class NRMSDataset(BaseDataset):
     def __init__(self, behaviors_path, news_path):
-        super(NAMLDataset, self).__init__()
-        self.behaviors_parsed = pd.read_table(behaviors_path)
-        self.news_parsed = pd.read_table(news_path,
-                                         index_col='id',
-                                         converters={
-                                             'title': literal_eval,
-                                             'abstract': literal_eval
-                                         })
-
-    def __len__(self):
-        return len(self.behaviors_parsed)
-
-    def __getitem__(self, idx):
-        """
-        example:
-            {
-                clicked: 0
-                candidate_news:
-                    {
-                        "category": 0,
-                        "subcategory": 0,
-                        "title": [0] * num_words_title,
-                        "abstract": [0] * num_words_abstract
-                    }
-                clicked_news:
-                    [
-                        {
-                            "category": 0,
-                            "subcategory": 0,
-                            "title": [0] * num_words_title,
-                            "abstract": [0] * num_words_abstract
-                        } * num_clicked_news_a_user
-                    ]
-            }
-        """
-        def news2dict(news, df):
-            return {
-                "category": df.loc[news].category,
-                "subcategory": df.loc[news].subcategory,
-                "title": df.loc[news].title,
-                "abstract": df.loc[news].abstract
-            } if news in df.index else {
-                "category": 0,
-                "subcategory": 0,
-                "title": [0] * Config.num_words_title,
-                "abstract": [0] * Config.num_words_abstract
-            }
-
-        item = {}
-        row = self.behaviors_parsed.iloc[idx]
-        item["clicked"] = row.clicked
-        item["candidate_news"] = news2dict(row.candidate_news,
-                                           self.news_parsed)
-        item["clicked_news"] = [
-            news2dict(x, self.news_parsed)
-            for x in row.clicked_news.split()[:Config.num_clicked_news_a_user]
-        ]
-        padding = {
-            "category": 0,
-            "subcategory": 0,
-            "title": [0] * Config.num_words_title,
-            "abstract": [0] * Config.num_words_abstract
-        }
-        repeated_times = Config.num_clicked_news_a_user - \
-            len(item["clicked_news"])
-        assert repeated_times >= 0
-        item["clicked_news"].extend([padding] * repeated_times)
-
-        return item
+        super(NRMSDataset, self).__init__(behaviors_path,
+                                          news_path,
+                                          ['title'])
 
 
-class LSTURDataset(Dataset):
+class NAMLDataset(BaseDataset):
     def __init__(self, behaviors_path, news_path):
-        super(LSTURDataset, self).__init__()
-        self.behaviors_parsed = pd.read_table(behaviors_path)
-        self.news_parsed = pd.read_table(news_path,
-                                         index_col='id',
-                                         converters={
-                                             'title': literal_eval,
-                                             'abstract': literal_eval
-                                         })
-
-    def __len__(self):
-        return len(self.behaviors_parsed)
-
-    def __getitem__(self, idx):
-        """
-        example:
-            {
-                user: 1,
-                clicked: 0,
-                candidate_news:
-                    {
-                        "category": 0,
-                        "subcategory": 0,
-                        "title": [0] * num_words_title,
-                        "abstract": [0] * num_words_abstract
-                    },
-                clicked_news:
-                    [
-                        {
-                            "category": 0,
-                            "subcategory": 0,
-                            "title": [0] * num_words_title,
-                            "abstract": [0] * num_words_abstract
-                        } * num_clicked_news_a_user
-                    ]
-            }
-        """
-        def news2dict(news, df):
-            return {
-                "category": df.loc[news].category,
-                "subcategory": df.loc[news].subcategory,
-                "title": df.loc[news].title,
-                "abstract": df.loc[news].abstract
-            } if news in df.index else {
-                "category": 0,
-                "subcategory": 0,
-                "title": [0] * Config.num_words_title,
-                "abstract": [0] * Config.num_words_abstract
-            }
-
-        item = {}
-        row = self.behaviors_parsed.iloc[idx]
-        item["user"] = row.user
-        item["clicked"] = row.clicked
-        item["candidate_news"] = news2dict(row.candidate_news,
-                                           self.news_parsed)
-        item["clicked_news"] = [
-            news2dict(x, self.news_parsed)
-            for x in row.clicked_news.split()[:Config.num_clicked_news_a_user]
-        ]
-        padding = {
-            "category": 0,
-            "subcategory": 0,
-            "title": [0] * Config.num_words_title,
-            "abstract": [0] * Config.num_words_abstract
-        }
-        repeated_times = Config.num_clicked_news_a_user - \
-            len(item["clicked_news"])
-        assert repeated_times >= 0
-        item["clicked_news"].extend([padding] * repeated_times)
-
-        return item
+        super(NAMLDataset, self).__init__(behaviors_path,
+                                          news_path,
+                                          ['category', 'subcategory', 'title', 'abstract'])
 
 
-class DKNDataset(Dataset):
+class LSTURDataset(BaseDataset):
     def __init__(self, behaviors_path, news_path):
-        super(DKNDataset, self).__init__()
-        self.behaviors_parsed = pd.read_table(behaviors_path)
-        self.news_parsed = pd.read_table(news_path,
-                                         index_col='id',
-                                         converters={
-                                             'title': literal_eval,
-                                             'title_entities': literal_eval
-                                         })
+        super(LSTURDataset, self).__init__(behaviors_path,
+                                           news_path,
+                                           ['user', 'category', 'subcategory', 'title', 'abstract'])
 
-    def __len__(self):
-        return len(self.behaviors_parsed)
 
-    def __getitem__(self, idx):
-        """
-        example:
-            {
-                clicked: 0
-                candidate_news:
-                    {
-                        "title": [0] * num_words_title,
-                        "title_entities": [0] * num_words_title
-                    }
-                clicked_news:
-                    [
-                        {
-                            "title": [0] * num_words_title,
-                            "title_entities": [0] * num_words_title
-                        } * num_clicked_news_a_user
-                    ]
-            }
-        """
-        def news2dict(news, df):
-            return {
-                "title": df.loc[news].title,
-                "title_entities": df.loc[news].title_entities
-            } if news in df.index else {
-                "title": [0] * Config.num_words_title,
-                "title_entities": [0] * Config.num_words_title
-            }
-
-        item = {}
-        row = self.behaviors_parsed.iloc[idx]
-        item["clicked"] = row.clicked
-        item["candidate_news"] = news2dict(row.candidate_news,
-                                           self.news_parsed)
-        item["clicked_news"] = [
-            news2dict(x, self.news_parsed)
-            for x in row.clicked_news.split()[:Config.num_clicked_news_a_user]
-        ]
-        padding = {
-            "title": [0] * Config.num_words_title,
-            "title_entities": [0] * Config.num_words_title
-        }
-        repeated_times = Config.num_clicked_news_a_user - \
-            len(item["clicked_news"])
-        assert repeated_times >= 0
-        item["clicked_news"].extend([padding] * repeated_times)
-
-        return item
+class DKNDataset(BaseDataset):
+    def __init__(self, behaviors_path, news_path):
+        super(DKNDataset, self).__init__(behaviors_path,
+                                         news_path,
+                                         ['title', 'title_entities'])

@@ -56,4 +56,8 @@ class NRMS(torch.nn.Module):
         return self.user_encoder(clicked_news_vector)
 
     def get_prediction(self, news_vector, user_vector):
+        """
+        news_vector: word_embedding_dim
+        user_vector: word_embedding_dim
+        """
         return torch.dot(news_vector, user_vector)
