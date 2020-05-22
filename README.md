@@ -2,12 +2,17 @@
 
 The repository currently includes the following models.
 
-| Model | Full name                                                    | Paper                                              |
-| ----- | ------------------------------------------------------------ | -------------------------------------------------- |
-| NRMS  | Neural News Recommendation with Multi-Head Self-Attention    | https://www.aclweb.org/anthology/D19-1671/         |
-| NAML  | Neural News Recommendation with Attentive Multi-View Learning | https://arxiv.org/abs/1907.05576                   |
-| LSTUR | Neural News Recommendation with Long- and Short-term User Representations | https://www.aclweb.org/anthology/P19-1033.pdf      |
-| DKN   | Deep Knowledge-Aware Network for News Recommendation         | https://dl.acm.org/doi/abs/10.1145/3178876.3186175 |
+| Model     | Full name                                                    | Paper                                              |
+| --------- | ------------------------------------------------------------ | -------------------------------------------------- |
+| NRMS      | Neural News Recommendation with Multi-Head Self-Attention    | https://www.aclweb.org/anthology/D19-1671/         |
+| NAML      | Neural News Recommendation with Attentive Multi-View Learning | https://arxiv.org/abs/1907.05576                   |
+| LSTUR     | Neural News Recommendation with Long- and Short-term User Representations | https://www.aclweb.org/anthology/P19-1033.pdf      |
+| DKN       | Deep Knowledge-Aware Network for News Recommendation         | https://dl.acm.org/doi/abs/10.1145/3178876.3186175 |
+| Hi-Fi Ark | Deep User Representation via High-Fidelity Archive Network   | https://www.ijcai.org/Proceedings/2019/424         |
+| TANR      | Neural News Recommendation with Topic-Aware News Representation | https://www.aclweb.org/anthology/P19-1110.pdf      |
+| FIM       | Fine-grained Interest Matching for Neural News Recommendation |                                                    |
+
+> Note: Hi-Fi Ark, TANR and FIM are WIP.
 
 ## Get started
 
@@ -70,13 +75,17 @@ tensorboard --logdir=runs
 
 ## Results
 
-| Model | AUC  | nMRR | nDCG@5 | nDCG@10 |
-| ----- | ---- | ---- | ------ | ------- |
-| NRMS  |      |      |        |         |
-| NAML  |      |      |        |         |
-| LSTUR |      |      |        |         |
-| DKN   |      |      |        |         |
+> Note: many results in the table are not ideal and I'm still trying to improve them😫.
 
+| Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 |
+| --------- | ----- | ----- | ------ | ------- |
+| NRMS      | 63.87 | 29.55 | 32.31  | 38.67   |
+| NAML      | 60.62 | 27.90 | 30.38  | 36.91   |
+| LSTUR     |       |       |        |         |
+| DKN       | 58.49 | 25.80 | 27.85  | 34.19   |
+| Hi-Fi Ark |       |       |        |         |
+| TANR      |       |       |        |         |
+| FIM       |       |       |        |         |
 
 ## Credits
 

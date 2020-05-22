@@ -180,15 +180,6 @@ def train():
             'epoch': epoch
         }, f"./checkpoint/{model_name}/ckpt-{epoch}.pth")
 
-    val_auc, val_mrr, val_ndcg5, val_ncg10 = evaluate(model, './data/val')
-    writer.add_scalar('Validation/AUC', val_auc, Config.num_batches)
-    writer.add_scalar('Validation/MRR', val_mrr, Config.num_batches)
-    writer.add_scalar('Validation/nDCG@5', val_ndcg5, Config.num_batches)
-    writer.add_scalar('Validation/nDCG@10', val_ncg10, Config.num_batches)
-    print(
-        f"Final result on validation dataset, validation AUC: {val_auc:.6f}, validation MRR: {val_mrr:.6f}, validation nDCG@5: {val_ndcg5:.6f}, validation nDCG@10: {val_ncg10:.6f}, "
-    )
-
 
 def time_since(since):
     """
