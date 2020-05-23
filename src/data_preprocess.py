@@ -9,17 +9,12 @@ import numpy as np
 import csv
 from pathlib import Path
 from shutil import copyfile
+import importlib
 
-if model_name == 'NRMS':
-    from config import NRMSConfig as Config
-elif model_name == 'NAML':
-    from config import NAMLConfig as Config
-elif model_name == 'LSTUR':
-    from config import LSTURConfig as Config
-elif model_name == 'DKN':
-    from config import DKNConfig as Config
-else:
-    print("Model name not included!")
+try:
+    Config = getattr(importlib.import_module('config'), f"{model_name}Config")
+except AttributeError:
+    print(f"{model_name} not included!")
     exit()
 
 
@@ -154,8 +149,7 @@ def parse_news(source, target, category2int_path, word2int_path,
                 times = len(
                     list(
                         filter(
-                            lambda x: x < len(row.title) + len(row.abstract) +
-                            1, e['OccurrenceOffsets']))) * e['Confidence']
+                            lambda x: x < len(row.title) + len(row.abstract) + 1, e['OccurrenceOffsets']))) * e['Confidence']
                 if times > 0:
                     if e['WikidataId'] not in entity2freq:
                         entity2freq[e['WikidataId']] = times

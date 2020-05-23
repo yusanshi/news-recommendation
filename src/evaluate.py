@@ -8,21 +8,13 @@ from torch.utils.data import Dataset, DataLoader
 import os
 import pandas as pd
 from ast import literal_eval
+import importlib
 
-if model_name == 'NRMS':
-    from model.NRMS import NRMS as Model
-    from config import NRMSConfig as Config
-elif model_name == 'NAML':
-    from model.NAML import NAML as Model
-    from config import NAMLConfig as Config
-elif model_name == 'LSTUR':
-    from model.LSTUR import LSTUR as Model
-    from config import LSTURConfig as Config
-elif model_name == 'DKN':
-    from model.DKN import DKN as Model
-    from config import DKNConfig as Config
-else:
-    print("Model name not included!")
+try:
+    Model = getattr(importlib.import_module(f"model.{model_name}"), model_name)
+    Config = getattr(importlib.import_module('config'), f"{model_name}Config")
+except (AttributeError, ModuleNotFoundError):
+    print(f"{model_name} not included!")
     exit()
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

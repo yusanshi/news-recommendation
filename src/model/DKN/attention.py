@@ -36,7 +36,6 @@ class Attention(torch.nn.Module):
                 dim=-1)).squeeze(-1).transpose(0, 1),
             dim=1)
 
-        # print(clicked_news_weights.max(dim=1))
         # batch_size, len(window_sizes) * num_filters
         user_vector = torch.bmm(clicked_news_weights.unsqueeze(1),
                                 clicked_news_vector).squeeze(1)

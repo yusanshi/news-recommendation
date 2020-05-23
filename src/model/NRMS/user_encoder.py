@@ -1,6 +1,6 @@
 import torch
-from model.general.multihead_self_attention import MultiHeadSelfAttention
-from model.general.additive_attention import AdditiveAttention
+from model.general.attention.multihead_self import MultiHeadSelfAttention
+from model.general.attention.additive import AdditiveAttention
 
 
 class UserEncoder(torch.nn.Module):

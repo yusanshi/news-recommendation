@@ -2,7 +2,7 @@ import os
 
 model_name = 'NRMS'
 # Currently included model
-assert model_name in ['NRMS', 'NAML', 'LSTUR', 'DKN']
+assert model_name in ['NRMS', 'NAML', 'LSTUR', 'DKN', 'HiFiArk', 'TANR', 'FIM']
 
 
 class BaseConfig():
@@ -12,8 +12,8 @@ class BaseConfig():
     num_batches = 8000  # Number of batches to train
     num_batches_batch_loss = 50  # Number of batchs to show loss
     # Number of batchs to check metrics on validation dataset
-    num_batches_validate = 200
-    num_batches_save_checkpoint = 100
+    num_batches_validate = 400
+    num_batches_save_checkpoint = 200
     batch_size = 128
     learning_rate = 0.001
     validation_proportion = 0.1
@@ -66,3 +66,11 @@ class DKNConfig(BaseConfig):
     # For CNN
     num_filters = 50
     window_sizes = [2, 3, 4]
+
+
+class HiFiArkConfig(BaseConfig):
+    # For CNN
+    num_filters = 300
+    window_size = 3
+    num_pooling_heads = 5
+    regularizer_loss_weight = 4.0  # TODO

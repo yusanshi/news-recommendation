@@ -5,7 +5,8 @@ import torch.nn.functional as F
 
 class AdditiveAttention(torch.nn.Module):
     """
-    A general additive attention module
+    A general additive attention module.
+    Originally for NAML.
     """
 
     def __init__(self, query_vector_dim, candidate_vector_dim):

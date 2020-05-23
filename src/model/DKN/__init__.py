@@ -1,7 +1,7 @@
 import torch
-import torch.nn as nn
-from model.DKN.kcnn import KCNN
+from model.DKN.KCNN import KCNN
 from model.DKN.attention import Attention
+from model.general.click_predictor.DNN import DNNClickPredictor
 
 
 class DKN(torch.nn.Module):
@@ -18,10 +18,8 @@ class DKN(torch.nn.Module):
                          pretrained_entity_embedding,
                          pretrained_context_embedding)
         self.attention = Attention(config)
-        self.dnn = nn.Sequential(
-            nn.Linear(
-                len(self.config.window_sizes) * 2 * self.config.num_filters,
-                16), nn.Linear(16, 1))
+        self.click_predictor = DNNClickPredictor(
+            len(self.config.window_sizes) * 2 * self.config.num_filters)
 
     def forward(self, candidate_news, clicked_news):
         """
@@ -49,11 +47,9 @@ class DKN(torch.nn.Module):
         # batch_size, len(window_sizes) * num_filters
         user_vector = self.attention(candidate_news_vector,
                                      clicked_news_vector)
-        # Sigmoid is done with BCEWithLogitsLoss
         # batch_size
-        click_probability = self.dnn(
-            torch.cat((user_vector, candidate_news_vector),
-                      dim=1)).squeeze(dim=1)
+        click_probability = self.click_predictor(
+            candidate_news_vector, user_vector)
         return click_probability
 
     def get_news_vector(self, news):
@@ -91,7 +87,7 @@ class DKN(torch.nn.Module):
         # 1, len(window_sizes) * num_filters
         user_vector = self.attention(candidate_news_vector.unsqueeze(dim=0),
                                      clicked_news_vector.unsqueeze(dim=0))
-        click_probability = self.dnn(
-            torch.cat((user_vector, candidate_news_vector.unsqueeze(dim=0)),
-                      dim=1)).squeeze()
+        # 0-dim tensor
+        click_probability = self.click_predictor(
+            candidate_news_vector.unsqueeze(dim=0), user_vector).squeeze(dim=0)
         return click_probability

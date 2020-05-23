@@ -2,17 +2,12 @@ from torch.utils.data import Dataset
 import pandas as pd
 from ast import literal_eval
 from config import model_name
+import importlib
 
-if model_name == 'NRMS':
-    from config import NRMSConfig as Config
-elif model_name == 'NAML':
-    from config import NAMLConfig as Config
-elif model_name == 'LSTUR':
-    from config import LSTURConfig as Config
-elif model_name == 'DKN':
-    from config import DKNConfig as Config
-else:
-    print("Model name not included!")
+try:
+    Config = getattr(importlib.import_module('config'), f"{model_name}Config")
+except AttributeError:
+    print(f"{model_name} not included!")
     exit()
 
 
@@ -100,3 +95,9 @@ class DKNDataset(BaseDataset):
     def __init__(self, behaviors_path, news_path):
         super(DKNDataset, self).__init__(behaviors_path, news_path,
                                          ['title', 'title_entities'])
+
+
+class HiFiArkDataset(BaseDataset):
+    def __init__(self, behaviors_path, news_path):
+        super(HiFiArkDataset, self).__init__(behaviors_path, news_path,
+                                             ['title'])

@@ -9,26 +9,17 @@ from tqdm import tqdm
 import os
 from pathlib import Path
 from evaluate import evaluate
+import importlib
 
-if model_name == 'NRMS':
-    from model.NRMS import NRMS as Model
-    from dataset import NRMSDataset as MyDataset
-    from config import NRMSConfig as Config
-elif model_name == 'NAML':
-    from model.NAML import NAML as Model
-    from dataset import NAMLDataset as MyDataset
-    from config import NAMLConfig as Config
-elif model_name == 'LSTUR':
-    from model.LSTUR import LSTUR as Model
-    from dataset import LSTURDataset as MyDataset
-    from config import LSTURConfig as Config
-elif model_name == 'DKN':
-    from model.DKN import DKN as Model
-    from dataset import DKNDataset as MyDataset
-    from config import DKNConfig as Config
-else:
-    print("Model name not included!")
+try:
+    Model = getattr(importlib.import_module(f"model.{model_name}"), model_name)
+    MyDataset = getattr(importlib.import_module(
+        'dataset'), f"{model_name}Dataset")
+    Config = getattr(importlib.import_module('config'), f"{model_name}Config")
+except (AttributeError, ModuleNotFoundError):
+    print(f"{model_name} not included!")
     exit()
+
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -94,8 +85,8 @@ def train():
                    num_workers=Config.num_workers,
                    drop_last=True))
 
-    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(
-        [Config.negative_sampling_ratio]).float().to(device))
+    # pos_weight=torch.tensor([Config.negative_sampling_ratio]).float().to(device)
+    criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=Config.learning_rate)
     start_time = time.time()
     loss_full = []
@@ -135,11 +126,16 @@ def train():
             if model_name == 'LSTUR':
                 y_pred = model(minibatch["user"], minibatch["candidate_news"],
                                minibatch["clicked_news"])
+            elif model_name == 'HiFiArk':
+                y_pred, regularizer_loss = model(minibatch["candidate_news"],
+                                                 minibatch["clicked_news"])
             else:
                 y_pred = model(minibatch["candidate_news"],
                                minibatch["clicked_news"])
             y = minibatch["clicked"].float().to(device)
             loss = criterion(y_pred, y)
+            if model_name == 'HiFiArk':
+                loss += Config.regularizer_loss_weight * regularizer_loss
             loss_full.append(loss.item())
             optimizer.zero_grad()
             loss.backward()

@@ -1,7 +1,7 @@
 import torch
 from model.NRMS.news_encoder import NewsEncoder
 from model.NRMS.user_encoder import UserEncoder
-from model.general.click_predictor import ClickPredictor
+from model.general.click_predictor.dot_product import DotProductClickPredictor
 
 
 class NRMS(torch.nn.Module):
@@ -15,7 +15,7 @@ class NRMS(torch.nn.Module):
         self.config = config
         self.news_encoder = NewsEncoder(config, pretrained_word_embedding)
         self.user_encoder = UserEncoder(config)
-        self.click_predictor = ClickPredictor()
+        self.click_predictor = DotProductClickPredictor()
 
     def forward(self, candidate_news, clicked_news):
         """
@@ -76,4 +76,7 @@ class NRMS(torch.nn.Module):
         Returns:
             click_probability: 0-dim tensor
         """
-        return torch.dot(news_vector, user_vector)
+        # 0-dim tensor
+        click_probability = self.click_predictor(
+            news_vector.unsqueeze(dim=0), user_vector.unsqueeze(dim=0)).squeeze(dim=0)
+        return click_probability

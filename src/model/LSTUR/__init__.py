@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from model.LSTUR.news_encoder import NewsEncoder
 from model.LSTUR.user_encoder import UserEncoder
-from model.general.click_predictor import ClickPredictor
+from model.general.click_predictor.dot_product import DotProductClickPredictor
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -19,7 +19,7 @@ class LSTUR(torch.nn.Module):
         self.config = config
         self.news_encoder = NewsEncoder(config, pretrained_word_embedding)
         self.user_encoder = UserEncoder(config)
-        self.click_predictor = ClickPredictor()
+        self.click_predictor = DotProductClickPredictor()
         self.user_embedding = nn.Embedding(config.num_users,
                                            config.num_filters * 4,
                                            padding_idx=0)
@@ -88,4 +88,7 @@ class LSTUR(torch.nn.Module):
         Returns:
             click_probability: 0-dim tensor
         """
-        return torch.dot(news_vector, user_vector)
+        # 0-dim tensor
+        click_probability = self.click_predictor(
+            news_vector.unsqueeze(dim=0), user_vector.unsqueeze(dim=0)).squeeze(dim=0)
+        return click_probability
