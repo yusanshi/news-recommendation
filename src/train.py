@@ -1,5 +1,6 @@
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from dataset import BaseDataset
 import torch
 import torch.nn as nn
 import time
@@ -13,8 +14,6 @@ import importlib
 
 try:
     Model = getattr(importlib.import_module(f"model.{model_name}"), model_name)
-    MyDataset = getattr(importlib.import_module(
-        'dataset'), f"{model_name}Dataset")
     Config = getattr(importlib.import_module('config'), f"{model_name}Config")
 except (AttributeError, ModuleNotFoundError):
     print(f"{model_name} not included!")
@@ -73,8 +72,8 @@ def train():
 
     print(model)
 
-    dataset = MyDataset('data/train/behaviors_parsed.tsv',
-                        'data/train/news_parsed.tsv')
+    dataset = BaseDataset('data/train/behaviors_parsed.tsv',
+                          'data/train/news_parsed.tsv', Config.dataset_attributes)
 
     print(f"Load training dataset with size {len(dataset)}.")
 

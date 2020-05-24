@@ -42,17 +42,21 @@ class BaseConfig():
 
 
 class NRMSConfig(BaseConfig):
+    dataset_attributes = ['title']
     # For multi-head self-attention
     num_attention_heads = 15
 
 
 class NAMLConfig(BaseConfig):
+    dataset_attributes = ['category', 'subcategory', 'title', 'abstract']
     # For CNN
     num_filters = 300
     window_size = 3
 
 
 class LSTURConfig(BaseConfig):
+    dataset_attributes = ['user', 'category',
+                          'subcategory', 'title', 'abstract']
     # For CNN
     num_filters = 300
     window_size = 3
@@ -63,14 +67,20 @@ class LSTURConfig(BaseConfig):
 
 
 class DKNConfig(BaseConfig):
+    dataset_attributes = ['title', 'title_entities']
     # For CNN
     num_filters = 50
     window_sizes = [2, 3, 4]
 
 
 class HiFiArkConfig(BaseConfig):
+    dataset_attributes = ['title']
     # For CNN
     num_filters = 300
     window_size = 3
     num_pooling_heads = 5
     regularizer_loss_weight = 4.0  # TODO
+
+
+class TANRConfig(BaseConfig):
+    dataset_attributes = ['title']

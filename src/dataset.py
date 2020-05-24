@@ -70,34 +70,3 @@ class BaseDataset(Dataset):
         item["clicked_news"].extend([self.padding] * repeated_times)
 
         return item
-
-
-class NRMSDataset(BaseDataset):
-    def __init__(self, behaviors_path, news_path):
-        super(NRMSDataset, self).__init__(behaviors_path, news_path, ['title'])
-
-
-class NAMLDataset(BaseDataset):
-    def __init__(self, behaviors_path, news_path):
-        super(NAMLDataset,
-              self).__init__(behaviors_path, news_path,
-                             ['category', 'subcategory', 'title', 'abstract'])
-
-
-class LSTURDataset(BaseDataset):
-    def __init__(self, behaviors_path, news_path):
-        super(LSTURDataset, self).__init__(
-            behaviors_path, news_path,
-            ['user', 'category', 'subcategory', 'title', 'abstract'])
-
-
-class DKNDataset(BaseDataset):
-    def __init__(self, behaviors_path, news_path):
-        super(DKNDataset, self).__init__(behaviors_path, news_path,
-                                         ['title', 'title_entities'])
-
-
-class HiFiArkDataset(BaseDataset):
-    def __init__(self, behaviors_path, news_path):
-        super(HiFiArkDataset, self).__init__(behaviors_path, news_path,
-                                             ['title'])
