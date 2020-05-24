@@ -39,9 +39,11 @@ class OMAP(torch.nn.Module):
         #         dim=1), self_attended_clicked_news_vector).squeeze(dim=1))
         # user_archive_vector = torch.stack(archives, dim=1)
 
-        # batch_size, num_clicked_news_a_user
-        normalized = (clicked_news_vector - torch.bmm(clicked_news_vector, torch.mm(
-            self.W, self.W.transpose(0, 1)).expand(real_batch_size, -1, -1))).norm(dim=2)
-        regularizer_loss = normalized.sum(dim=1).mean()
-
+        if self.training:
+            # batch_size, num_clicked_news_a_user
+            normalized = (clicked_news_vector - torch.bmm(clicked_news_vector, torch.mm(
+                self.W, self.W.transpose(0, 1)).expand(real_batch_size, -1, -1))).norm(dim=2)
+            regularizer_loss = normalized.sum(dim=1).mean()
+        else:
+            regularizer_loss = None
         return user_archive_vector, regularizer_loss

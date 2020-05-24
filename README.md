@@ -12,8 +12,6 @@ The repository currently includes the following models.
 | TANR      | Neural News Recommendation with Topic-Aware News Representation | https://www.aclweb.org/anthology/P19-1110.pdf      |
 | FIM       | Fine-grained Interest Matching for Neural News Recommendation |                                                    |
 
-> Note: Hi-Fi Ark, TANR and FIM are WIP.
-
 ## Get started
 
 Basic setup.
@@ -79,7 +77,7 @@ tensorboard --logdir=runs
 
 | Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 |
 | --------- | ----- | ----- | ------ | ------- |
-| NRMS      | 63.87 | 29.55 | 32.31  | 38.67   |
+| NRMS      | 64.30 | 30.15 | 33.03  | 39.43   |
 | NAML      | 60.62 | 27.90 | 30.38  | 36.91   |
 | LSTUR     |       |       |        |         |
 | DKN       | 58.49 | 25.80 | 27.85  | 34.19   |

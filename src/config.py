@@ -1,6 +1,6 @@
 import os
 
-model_name = 'NRMS'
+model_name = os.environ['MODEL_NAME'] if 'MODEL_NAME' in os.environ else 'TANR'
 # Currently included model
 assert model_name in ['NRMS', 'NAML', 'LSTUR', 'DKN', 'HiFiArk', 'TANR', 'FIM']
 
@@ -17,7 +17,7 @@ class BaseConfig():
     batch_size = 128
     learning_rate = 0.001
     validation_proportion = 0.1
-    num_workers = 4  # Number of workers for data loading
+    num_workers = 0  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
     # Whether try to load checkpoint
     load_checkpoint = os.environ[
@@ -32,7 +32,7 @@ class BaseConfig():
     # Modify the following by the output of `src/dataprocess.py`
     num_words = 1 + 31313
     num_categories = 1 + 274
-    num_users = 1 + 50000
+    num_users = 1 + 49108
     word_embedding_dim = 300
     category_embedding_dim = 100
     # Modify the following only if you use another dataset
@@ -98,6 +98,10 @@ class HiFiArkConfig(BaseConfig):
 
 class TANRConfig(BaseConfig):
     dataset_attributes = {
-        "news": ['title'],
+        "news": ['category', 'title'],
         "record": []
     }
+    # For CNN
+    num_filters = 300
+    window_size = 3
+    topic_classification_loss_weight = 0.1  # TODO

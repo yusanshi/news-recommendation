@@ -1,7 +1,10 @@
 import torch
+import torch.nn as nn
 from model.TANR.news_encoder import NewsEncoder
 from model.TANR.user_encoder import UserEncoder
 from model.general.click_predictor.dot_product import DotProductClickPredictor
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class TANR(torch.nn.Module):
@@ -16,6 +19,8 @@ class TANR(torch.nn.Module):
         self.news_encoder = NewsEncoder(config, pretrained_word_embedding)
         self.user_encoder = UserEncoder(config)
         self.click_predictor = DotProductClickPredictor()
+        self.topic_predictor = nn.Linear(
+            config.num_filters, config.num_categories)
 
     def forward(self, candidate_news, clicked_news):
         """
@@ -23,17 +28,13 @@ class TANR(torch.nn.Module):
             candidate_news:
                 {
                     "category": Tensor(batch_size),
-                    "subcategory": Tensor(batch_size),
-                    "title": Tensor(batch_size) * num_words_title,
-                    "abstract": Tensor(batch_size) * num_words_abstract
+                    "title": Tensor(batch_size) * num_words_title
                 }
             clicked_news:
                 [
                     {
                         "category": Tensor(batch_size),
-                        "subcategory": Tensor(batch_size),
-                        "title": Tensor(batch_size) * num_words_title,
-                        "abstract": Tensor(batch_size) * num_words_abstract
+                        "title": Tensor(batch_size) * num_words_title
                     } * num_clicked_news_a_user
                 ]
         Returns:
@@ -49,17 +50,28 @@ class TANR(torch.nn.Module):
         # batch_size
         click_probability = self.click_predictor(candidate_news_vector,
                                                  user_vector)
-        return click_probability
+        if self.training:
+            # X = batch_size * (1 + num_clicked_news_a_user)
+            # X, num_categories
+            y_pred = self.topic_predictor(torch.cat(
+                (candidate_news_vector.unsqueeze(dim=1), clicked_news_vector), dim=1).view(-1, self.config.num_filters))
+            # X
+            y = torch.stack(
+                [candidate_news['category']] + [x['category'] for x in clicked_news], dim=1).flatten().to(device)
+            class_weight = torch.ones(self.config.num_categories).to(device)
+            class_weight[0] = 0
+            criterion = nn.CrossEntropyLoss(weight=class_weight)
+            topic_classification_loss = criterion(y_pred, y)
+        else:
+            topic_classification_loss = None
+        return click_probability, topic_classification_loss
 
     def get_news_vector(self, news):
         """
         Args:
             news:
                 {
-                    "category": Tensor(batch_size),
-                    "subcategory": Tensor(batch_size),
-                    "title": Tensor(batch_size) * num_words_title,
-                    "abstract": Tensor(batch_size) * num_words_abstract
+                    "title": Tensor(batch_size) * num_words_title
                 }
         Returns:
             (shape) batch_size, num_filters

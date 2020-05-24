@@ -84,8 +84,7 @@ def train():
                    num_workers=Config.num_workers,
                    drop_last=True))
 
-    # pos_weight=torch.tensor([Config.negative_sampling_ratio]).float().to(device)
-    criterion = nn.BCELoss()
+    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([Config.negative_sampling_ratio]).float().to(device))
     optimizer = torch.optim.Adam(model.parameters(), lr=Config.learning_rate)
     start_time = time.time()
     loss_full = []
@@ -130,13 +129,22 @@ def train():
             elif model_name == 'HiFiArk':
                 y_pred, regularizer_loss = model(minibatch["candidate_news"],
                                                  minibatch["clicked_news"])
+            elif model_name == 'TANR':
+                y_pred, topic_classification_loss = model(minibatch["candidate_news"],
+                                                          minibatch["clicked_news"])
             else:
                 y_pred = model(minibatch["candidate_news"],
                                minibatch["clicked_news"])
             y = minibatch["clicked"].float().to(device)
             loss = criterion(y_pred, y)
             if model_name == 'HiFiArk':
+                # if i % 10 == 0:
+                #     print(loss.item(), '\t', regularizer_loss.item())
                 loss += Config.regularizer_loss_weight * regularizer_loss
+            elif model_name == 'TANR':
+                # if i % 10 == 0:
+                #     print(loss.item(), '\t', topic_classification_loss.item())
+                loss += Config.topic_classification_loss_weight * topic_classification_loss
             loss_full.append(loss.item())
             optimizer.zero_grad()
             loss.backward()
