@@ -42,21 +42,29 @@ class BaseConfig():
 
 
 class NRMSConfig(BaseConfig):
-    dataset_attributes = ['title']
+    dataset_attributes = {
+        "news": ['title'],
+        "record": []
+    }
     # For multi-head self-attention
     num_attention_heads = 15
 
 
 class NAMLConfig(BaseConfig):
-    dataset_attributes = ['category', 'subcategory', 'title', 'abstract']
+    dataset_attributes = {
+        "news": ['category', 'subcategory', 'title', 'abstract'],
+        "record": []
+    }
     # For CNN
     num_filters = 300
     window_size = 3
 
 
 class LSTURConfig(BaseConfig):
-    dataset_attributes = ['user', 'category',
-                          'subcategory', 'title', 'abstract']
+    dataset_attributes = {
+        "news": ['category', 'subcategory', 'title', 'abstract'],
+        "record": ['user', 'clicked_news_length']
+    }
     # For CNN
     num_filters = 300
     window_size = 3
@@ -67,14 +75,20 @@ class LSTURConfig(BaseConfig):
 
 
 class DKNConfig(BaseConfig):
-    dataset_attributes = ['title', 'title_entities']
+    dataset_attributes = {
+        "news": ['title', 'title_entities'],
+        "record": []
+    }
     # For CNN
     num_filters = 50
     window_sizes = [2, 3, 4]
 
 
 class HiFiArkConfig(BaseConfig):
-    dataset_attributes = ['title']
+    dataset_attributes = {
+        "news": ['title'],
+        "record": []
+    }
     # For CNN
     num_filters = 300
     window_size = 3
@@ -83,4 +97,7 @@ class HiFiArkConfig(BaseConfig):
 
 
 class TANRConfig(BaseConfig):
-    dataset_attributes = ['title']
+    dataset_attributes = {
+        "news": ['title'],
+        "record": []
+    }

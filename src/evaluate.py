@@ -125,7 +125,8 @@ class UserDataset(Dataset):
                                        header=None,
                                        usecols=[0, 2],
                                        names=['user', 'clicked_news'])
-        self.behaviors.fillna(' ', inplace=True)
+        # This line is unexpected!
+        self.behaviors.dropna(subset=["clicked_news"], inplace=True)
         self.behaviors.drop_duplicates(inplace=True)
         user2int = dict(pd.read_table(user2int_path).values.tolist())
         for row in self.behaviors.itertuples():
@@ -145,6 +146,7 @@ class UserDataset(Dataset):
             "clicked_news":
             row.clicked_news.split()[:Config.num_clicked_news_a_user]
         }
+        item['clicked_news_length'] = len(item["clicked_news"])
         repeated_times = Config.num_clicked_news_a_user - len(
             item["clicked_news"])
         assert repeated_times >= 0
@@ -164,7 +166,8 @@ class BehaviorsDataset(Dataset):
                                        header=None,
                                        usecols=[2, 3],
                                        names=['clicked_news', 'impressions'])
-        self.behaviors.fillna(' ', inplace=True)
+        # This line is unexpected!
+        self.behaviors.dropna(subset=["clicked_news"], inplace=True)
         self.behaviors.impressions = self.behaviors.impressions.str.split()
 
     def __len__(self):
@@ -236,7 +239,9 @@ def evaluate(model, directory):
                     dim=0).transpose(0, 1)
                 if model_name == 'LSTUR':
                     user_vector = model.get_user_vector(
-                        minibatch['user'], clicked_news_vector)
+                        minibatch['user'],
+                        minibatch['clicked_news_length'],
+                        clicked_news_vector)
                 else:
                     user_vector = model.get_user_vector(clicked_news_vector)
                 for user, vector in zip(user_strings, user_vector):

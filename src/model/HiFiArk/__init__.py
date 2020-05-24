@@ -36,6 +36,7 @@ class HiFiArk(torch.nn.Module):
                 ]
         Returns:
             click_probability: batch_size
+            regularizer_loss: 0-dim tensor
         """
         # batch_size, num_filters
         candidate_news_vector = self.news_encoder(candidate_news)

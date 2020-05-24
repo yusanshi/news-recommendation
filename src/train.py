@@ -123,7 +123,9 @@ def train():
 
             epoch += 1
             if model_name == 'LSTUR':
-                y_pred = model(minibatch["user"], minibatch["candidate_news"],
+                y_pred = model(minibatch["user"],
+                               minibatch["clicked_news_length"],
+                               minibatch["candidate_news"],
                                minibatch["clicked_news"])
             elif model_name == 'HiFiArk':
                 y_pred, regularizer_loss = model(minibatch["candidate_news"],
