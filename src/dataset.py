@@ -16,12 +16,11 @@ class BaseDataset(Dataset):
         super(BaseDataset, self).__init__()
         self.attributes = attributes
         assert all(attribute in [
-            'category', 'subcategory', 'title', 'abstract',
-            'title_entities', 'abstract_entities'
+            'category', 'subcategory', 'title', 'abstract', 'title_entities',
+            'abstract_entities'
         ] for attribute in attributes['news'])
-        assert all(attribute in [
-            'user', 'clicked_news_length'
-        ] for attribute in attributes['record'])
+        assert all(attribute in ['user', 'clicked_news_length']
+                   for attribute in attributes['record'])
 
         self.behaviors_parsed = pd.read_table(behaviors_path)
         self.news_parsed = pd.read_table(
@@ -52,10 +51,9 @@ class BaseDataset(Dataset):
 
     def __getitem__(self, idx):
         def news2dict(news, df):
-            return {
-                key: df.loc[news][key]
-                for key in self.attributes['news']
-            } if news in df.index else self.padding
+            return {key: df.loc[news][key]
+                    for key in self.attributes['news']
+                    } if news in df.index else self.padding
 
         item = {}
         row = self.behaviors_parsed.iloc[idx]

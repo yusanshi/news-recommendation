@@ -4,11 +4,11 @@ import torch.nn.functional as F
 
 
 class OMAP(torch.nn.Module):
-
     def __init__(self, config):
         super(OMAP, self).__init__()
         self.W = nn.Parameter(
-            torch.empty(config.num_filters, config.num_pooling_heads).uniform_(-0.1, 0.1))
+            torch.empty(config.num_filters,
+                        config.num_pooling_heads).uniform_(-0.1, 0.1))
 
     def forward(self, self_attended_clicked_news_vector, clicked_news_vector):
         """
@@ -22,11 +22,13 @@ class OMAP(torch.nn.Module):
         # In case that drop_last=False, when real_batch_size != config.batch_size
         real_batch_size = self_attended_clicked_news_vector.size(0)
         # batch_size, num_pooling_heads, num_clicked_news_a_user
-        weights = F.softmax(torch.bmm(
-            self_attended_clicked_news_vector, self.W.expand(real_batch_size, -1, -1)).transpose(1, 2), dim=2)
+        weights = F.softmax(torch.bmm(self_attended_clicked_news_vector,
+                                      self.W.expand(real_batch_size, -1,
+                                                    -1)).transpose(1, 2),
+                            dim=2)
         # batch_size, num_pooling_heads, num_filters
-        user_archive_vector = torch.bmm(
-            weights, self_attended_clicked_news_vector)
+        user_archive_vector = torch.bmm(weights,
+                                        self_attended_clicked_news_vector)
 
         # The following does the same thing, simpler but not so efficient
         # archives = []
@@ -41,8 +43,10 @@ class OMAP(torch.nn.Module):
 
         if self.training:
             # batch_size, num_clicked_news_a_user
-            normalized = (clicked_news_vector - torch.bmm(clicked_news_vector, torch.mm(
-                self.W, self.W.transpose(0, 1)).expand(real_batch_size, -1, -1))).norm(dim=2)
+            normalized = (clicked_news_vector - torch.bmm(
+                clicked_news_vector,
+                torch.mm(self.W, self.W.transpose(0, 1)).expand(
+                    real_batch_size, -1, -1))).norm(dim=2)
             regularizer_loss = normalized.sum(dim=1).mean()
         else:
             regularizer_loss = None

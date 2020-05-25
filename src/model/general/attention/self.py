@@ -19,8 +19,9 @@ class SelfAttention(torch.nn.Module):
             (shape) batch_size, candidate_size, candidate_vector_dim
         """
         # batch_size, candidate_size, candidate_size
-        weights = F.softmax(
-            torch.bmm(candidate_vector, candidate_vector.transpose(1, 2)), dim=2)
+        weights = F.softmax(torch.bmm(candidate_vector,
+                                      candidate_vector.transpose(1, 2)),
+                            dim=2)
         # batch_size, candidate_size, candidate_vector_dim
         self_attended_vector = torch.bmm(weights, candidate_vector)
         return self_attended_vector

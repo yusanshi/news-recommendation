@@ -58,8 +58,8 @@ class LSTUR(torch.nn.Module):
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
         # batch_size, num_filters * 4
-        user_vector = self.user_encoder(
-            user, clicked_news_length, clicked_news_vector)
+        user_vector = self.user_encoder(user, clicked_news_length,
+                                        clicked_news_vector)
         # batch_size
         click_probability = self.click_predictor(candidate_news_vector,
                                                  user_vector)
@@ -81,7 +81,8 @@ class LSTUR(torch.nn.Module):
         # batch_size, num_filters * 4
         user = self.user_embedding(user.to(device))
         # batch_size, num_filters * 4
-        return self.user_encoder(user, clicked_news_length, clicked_news_vector)
+        return self.user_encoder(user, clicked_news_length,
+                                 clicked_news_vector)
 
     def get_prediction(self, news_vector, user_vector):
         """
@@ -93,5 +94,6 @@ class LSTUR(torch.nn.Module):
         """
         # 0-dim tensor
         click_probability = self.click_predictor(
-            news_vector.unsqueeze(dim=0), user_vector.unsqueeze(dim=0)).squeeze(dim=0)
+            news_vector.unsqueeze(dim=0),
+            user_vector.unsqueeze(dim=0)).squeeze(dim=0)
         return click_probability

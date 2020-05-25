@@ -19,8 +19,8 @@ class TANR(torch.nn.Module):
         self.news_encoder = NewsEncoder(config, pretrained_word_embedding)
         self.user_encoder = UserEncoder(config)
         self.click_predictor = DotProductClickPredictor()
-        self.topic_predictor = nn.Linear(
-            config.num_filters, config.num_categories)
+        self.topic_predictor = nn.Linear(config.num_filters,
+                                         config.num_categories)
 
     def forward(self, candidate_news, clicked_news):
         """
@@ -50,20 +50,20 @@ class TANR(torch.nn.Module):
         # batch_size
         click_probability = self.click_predictor(candidate_news_vector,
                                                  user_vector)
-        if self.training:
-            # X = batch_size * (1 + num_clicked_news_a_user)
-            # X, num_categories
-            y_pred = self.topic_predictor(torch.cat(
-                (candidate_news_vector.unsqueeze(dim=1), clicked_news_vector), dim=1).view(-1, self.config.num_filters))
-            # X
-            y = torch.stack(
-                [candidate_news['category']] + [x['category'] for x in clicked_news], dim=1).flatten().to(device)
-            class_weight = torch.ones(self.config.num_categories).to(device)
-            class_weight[0] = 0
-            criterion = nn.CrossEntropyLoss(weight=class_weight)
-            topic_classification_loss = criterion(y_pred, y)
-        else:
-            topic_classification_loss = None
+        # X = batch_size * (1 + num_clicked_news_a_user)
+        # X, num_categories
+        y_pred = self.topic_predictor(
+            torch.cat(
+                (candidate_news_vector.unsqueeze(dim=1), clicked_news_vector),
+                dim=1).view(-1, self.config.num_filters))
+        # X
+        y = torch.stack([candidate_news['category']] + [x['category'] for x in clicked_news],
+                        dim=1).flatten().to(device)
+        class_weight = torch.ones(self.config.num_categories).to(device)
+        class_weight[0] = 0
+        criterion = nn.CrossEntropyLoss(weight=class_weight)
+        topic_classification_loss = criterion(y_pred, y)
+
         return click_probability, topic_classification_loss
 
     def get_news_vector(self, news):
@@ -99,5 +99,6 @@ class TANR(torch.nn.Module):
         """
         # 0-dim tensor
         click_probability = self.click_predictor(
-            news_vector.unsqueeze(dim=0), user_vector.unsqueeze(dim=0)).squeeze(dim=0)
+            news_vector.unsqueeze(dim=0),
+            user_vector.unsqueeze(dim=0)).squeeze(dim=0)
         return click_probability

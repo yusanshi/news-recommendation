@@ -19,7 +19,6 @@ except (AttributeError, ModuleNotFoundError):
     print(f"{model_name} not included!")
     exit()
 
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -73,7 +72,8 @@ def train():
     print(model)
 
     dataset = BaseDataset('data/train/behaviors_parsed.tsv',
-                          'data/train/news_parsed.tsv', Config.dataset_attributes)
+                          'data/train/news_parsed.tsv',
+                          Config.dataset_attributes)
 
     print(f"Load training dataset with size {len(dataset)}.")
 
@@ -84,7 +84,8 @@ def train():
                    num_workers=Config.num_workers,
                    drop_last=True))
 
-    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([Config.negative_sampling_ratio]).float().to(device))
+    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(
+        [Config.negative_sampling_ratio]).float().to(device))
     optimizer = torch.optim.Adam(model.parameters(), lr=Config.learning_rate)
     start_time = time.time()
     loss_full = []
@@ -130,8 +131,8 @@ def train():
                 y_pred, regularizer_loss = model(minibatch["candidate_news"],
                                                  minibatch["clicked_news"])
             elif model_name == 'TANR':
-                y_pred, topic_classification_loss = model(minibatch["candidate_news"],
-                                                          minibatch["clicked_news"])
+                y_pred, topic_classification_loss = model(
+                    minibatch["candidate_news"], minibatch["clicked_news"])
             else:
                 y_pred = model(minibatch["candidate_news"],
                                minibatch["clicked_news"])

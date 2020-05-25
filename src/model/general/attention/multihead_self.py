@@ -8,6 +8,7 @@ class MultiHeadSelfAttention(torch.nn.Module):
     A general multi-head self attention module.
     Originally for NRMS.
     """
+
     def __init__(self, candidate_vector_dim, num_attention_heads):
         super(MultiHeadSelfAttention, self).__init__()
         assert candidate_vector_dim % num_attention_heads == 0

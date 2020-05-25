@@ -44,14 +44,14 @@ class HiFiArk(torch.nn.Module):
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
         # batch_size, num_clicked_news_a_user, num_filters
-        self_attended_clicked_news_vector = torch.add(self.self_attention(
-            clicked_news_vector), clicked_news_vector)
+        self_attended_clicked_news_vector = torch.add(
+            self.self_attention(clicked_news_vector), clicked_news_vector)
         # batch_size, num_pooling_heads, num_filters
         user_archive_vector, regularizer_loss = self.omap(
             self_attended_clicked_news_vector, clicked_news_vector)
         # batch_size, num_filters
-        user_vector = self.similarity_attention(
-            candidate_news_vector, user_archive_vector)
+        user_vector = self.similarity_attention(candidate_news_vector,
+                                                user_archive_vector)
         # batch_size
         click_probability = self.click_predictor(candidate_news_vector,
                                                  user_vector)
@@ -78,11 +78,11 @@ class HiFiArk(torch.nn.Module):
             (shape) batch_size, num_pooling_heads, num_filters
         """
         # batch_size, num_clicked_news_a_user, num_filters
-        self_attended_clicked_news_vector = torch.add(self.self_attention(
-            clicked_news_vector), clicked_news_vector)
+        self_attended_clicked_news_vector = torch.add(
+            self.self_attention(clicked_news_vector), clicked_news_vector)
         # batch_size, num_pooling_heads, num_filters
-        user_archive_vector, _ = self.omap(
-            self_attended_clicked_news_vector, clicked_news_vector)
+        user_archive_vector, _ = self.omap(self_attended_clicked_news_vector,
+                                           clicked_news_vector)
         return user_archive_vector
 
     def get_prediction(self, candidate_news_vector, user_archive_vector):
@@ -95,8 +95,9 @@ class HiFiArk(torch.nn.Module):
         """
         # 1, num_filters
         user_vector = self.similarity_attention(
-            candidate_news_vector.unsqueeze(dim=0), user_archive_vector.unsqueeze(dim=0))
+            candidate_news_vector.unsqueeze(dim=0),
+            user_archive_vector.unsqueeze(dim=0))
         # 0-dim tensor
-        click_probability = self.click_predictor(candidate_news_vector.unsqueeze(dim=0),
-                                                 user_vector).squeeze(dim=0)
+        click_probability = self.click_predictor(
+            candidate_news_vector.unsqueeze(dim=0), user_vector).squeeze(dim=0)
         return click_probability

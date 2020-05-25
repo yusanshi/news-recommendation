@@ -48,8 +48,8 @@ class DKN(torch.nn.Module):
         user_vector = self.attention(candidate_news_vector,
                                      clicked_news_vector)
         # batch_size
-        click_probability = self.click_predictor(
-            candidate_news_vector, user_vector)
+        click_probability = self.click_predictor(candidate_news_vector,
+                                                 user_vector)
         return click_probability
 
     def get_news_vector(self, news):

@@ -78,5 +78,6 @@ class NRMS(torch.nn.Module):
         """
         # 0-dim tensor
         click_probability = self.click_predictor(
-            news_vector.unsqueeze(dim=0), user_vector.unsqueeze(dim=0)).squeeze(dim=0)
+            news_vector.unsqueeze(dim=0),
+            user_vector.unsqueeze(dim=0)).squeeze(dim=0)
         return click_probability

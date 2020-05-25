@@ -21,7 +21,10 @@ class UserEncoder(torch.nn.Module):
         # 1, batch_size, num_filters * 4
         if self.config.long_short_term_method == 'ini':
             packed_clicked_news_vector = pack_padded_sequence(
-                clicked_news_vector, clicked_news_length, batch_first=True, enforce_sorted=False)
+                clicked_news_vector,
+                clicked_news_length,
+                batch_first=True,
+                enforce_sorted=False)
             _, last_hidden = self.gru(packed_clicked_news_vector,
                                       user.unsqueeze(dim=0))
         else:

@@ -14,8 +14,9 @@ class DotProductClickPredictor(torch.nn.Module):
             (shape): batch_size
         """
         # batch_size
-        probability = torch.bmm(user_vector.unsqueeze(dim=1),
-                                candidate_news_vector.unsqueeze(dim=2)).flatten()
+        probability = torch.bmm(
+            user_vector.unsqueeze(dim=1),
+            candidate_news_vector.unsqueeze(dim=2)).flatten()
         if self.training:
             return probability
         else:

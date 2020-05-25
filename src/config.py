@@ -1,6 +1,6 @@
 import os
 
-model_name = os.environ['MODEL_NAME'] if 'MODEL_NAME' in os.environ else 'TANR'
+model_name = os.environ['MODEL_NAME'] if 'MODEL_NAME' in os.environ else 'NRMS'
 # Currently included model
 assert model_name in ['NRMS', 'NAML', 'LSTUR', 'DKN', 'HiFiArk', 'TANR', 'FIM']
 
@@ -105,3 +105,34 @@ class TANRConfig(BaseConfig):
     num_filters = 300
     window_size = 3
     topic_classification_loss_weight = 0.1  # TODO
+
+
+class FIMConfig(BaseConfig):
+    dataset_attributes = {
+        # Currently only title is used
+        "news": ['category', 'subcategory', 'title'],
+        "record": []
+    }
+    news_rep = {
+        "num_filters": 300,
+        "window_size": 3,
+        "dilations": [1, 2, 3]
+    }
+    cross_matching = {
+        "layers": [
+            {
+                "num_filters": 32,
+                "window_size": (3, 3, 3),
+                "stride": (1, 1, 1)
+            },
+            {
+                "num_filters": 16,
+                "window_size": (3, 3, 3),
+                "stride": (1, 1, 1)
+            }
+        ],
+        "max_pooling": {
+            "window_size": (3, 3, 3),
+            "stride": (3, 3, 3)
+        }
+    }

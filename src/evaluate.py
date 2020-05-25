@@ -239,8 +239,7 @@ def evaluate(model, directory):
                     dim=0).transpose(0, 1)
                 if model_name == 'LSTUR':
                     user_vector = model.get_user_vector(
-                        minibatch['user'],
-                        minibatch['clicked_news_length'],
+                        minibatch['user'], minibatch['clicked_news_length'],
                         clicked_news_vector)
                 else:
                     user_vector = model.get_user_vector(clicked_news_vector)
