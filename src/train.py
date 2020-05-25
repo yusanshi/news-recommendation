@@ -92,9 +92,9 @@ def train():
     exhaustion_count = 0
     epoch = 0
 
+    checkpoint_dir = os.path.join('./checkpoint', model_name)
+    Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
     if Config.load_checkpoint:
-        checkpoint_dir = os.path.join('./checkpoint', model_name)
-        Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
         checkpoint_path = latest_checkpoint(checkpoint_dir)
         if checkpoint_path is not None:
             print(f"Load saved parameters in {checkpoint_path}")
