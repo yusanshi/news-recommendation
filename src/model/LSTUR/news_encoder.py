@@ -26,15 +26,9 @@ class NewsEncoder(torch.nn.Module):
             config.num_filters,
             (config.window_size, config.word_embedding_dim),
             padding=(int((config.window_size - 1) / 2), 0))
-        self.abstract_CNN = nn.Conv2d(
-            1,
-            config.num_filters,
-            (config.window_size, config.word_embedding_dim),
-            padding=(int((config.window_size - 1) / 2), 0))
         self.title_attention = AdditiveAttention(config.query_vector_dim,
                                                  config.num_filters)
-        self.abstract_attention = AdditiveAttention(config.query_vector_dim,
-                                                    config.num_filters)
+        
 
     def forward(self, news):
         """
@@ -43,11 +37,10 @@ class NewsEncoder(torch.nn.Module):
                 {
                     "category": Tensor(batch_size),
                     "subcategory": Tensor(batch_size),
-                    "title": Tensor(batch_size) * num_words_title,
-                    "abstract": Tensor(batch_size) * num_words_abstract
+                    "title": Tensor(batch_size) * num_words_title
                 }
         Returns:
-            (shape) batch_size, num_filters * 4
+            (shape) batch_size, num_filters * 3
         """
         # Part 1: calculate category_vector
 
@@ -78,29 +71,9 @@ class NewsEncoder(torch.nn.Module):
         weighted_title_vector = self.title_attention(
             activated_title_vector.transpose(1, 2))
 
-        # Part 4: calculate weighted_abstract_vector
-
-        # batch_size, num_words_abstract, word_embedding_dim
-        abstract_vector = F.dropout(self.word_embedding(
-            torch.stack(news['abstract'], dim=1).to(device)),
-            p=self.config.dropout_probability,
-            training=self.training)
-        # batch_size, num_filters, num_words_abstract
-        convoluted_abstract_vector = self.abstract_CNN(
-            abstract_vector.unsqueeze(dim=1)).squeeze(dim=3)
-        # batch_size, num_filters, num_words_abstract
-        activated_abstract_vector = F.dropout(
-            F.relu(convoluted_abstract_vector),
-            p=self.config.dropout_probability,
-            training=self.training)
-        # batch_size, num_filters
-        weighted_abstract_vector = self.abstract_attention(
-            activated_abstract_vector.transpose(1, 2))
-
-        # batch_size, num_filters * 4
+        # batch_size, num_filters * 3
         news_vector = torch.cat([
-            category_vector, subcategory_vector, weighted_title_vector,
-            weighted_abstract_vector
+            category_vector, subcategory_vector, weighted_title_vector
         ],
             dim=1)
         return news_vector

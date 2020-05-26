@@ -10,7 +10,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class TANR(torch.nn.Module):
     """
     TANR network.
-    Input a candidate news and a list of user clicked news, produce the click probability.
+    Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
 
     def __init__(self, config, pretrained_word_embedding):
@@ -26,10 +26,12 @@ class TANR(torch.nn.Module):
         """
         Args:
             candidate_news:
-                {
-                    "category": Tensor(batch_size),
-                    "title": Tensor(batch_size) * num_words_title
-                }
+                [
+                    {
+                        "category": Tensor(batch_size),
+                        "title": Tensor(batch_size) * num_words_title
+                    } * (1 + K)
+                ]
             clicked_news:
                 [
                     {
@@ -38,26 +40,29 @@ class TANR(torch.nn.Module):
                     } * num_clicked_news_a_user
                 ]
         Returns:
-            click_probability: batch_size
+            click_probability: batch_size, 1 + K
         """
-        # batch_size, num_filters
-        candidate_news_vector = self.news_encoder(candidate_news)
+        # 1 + K, batch_size, num_filters
+        candidate_news_vector = torch.stack(
+            [self.news_encoder(x) for x in candidate_news])
         # batch_size, num_clicked_news_a_user, num_filters
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
         # batch_size, num_filters
         user_vector = self.user_encoder(clicked_news_vector)
-        # batch_size
-        click_probability = self.click_predictor(candidate_news_vector,
-                                                 user_vector)
-        # X = batch_size * (1 + num_clicked_news_a_user)
+        # batch_size, 1 + K
+        click_probability = torch.stack([self.click_predictor(x,
+                                                              user_vector) for x in candidate_news_vector], dim=1)
+
+        # TODO
+        # X = batch_size * (1 + K + num_clicked_news_a_user)
         # X, num_categories
         y_pred = self.topic_predictor(
             torch.cat(
-                (candidate_news_vector.unsqueeze(dim=1), clicked_news_vector),
+                (candidate_news_vector.transpose(0, 1), clicked_news_vector),
                 dim=1).view(-1, self.config.num_filters))
         # X
-        y = torch.stack([candidate_news['category']] + [x['category'] for x in clicked_news],
+        y = torch.stack([x['category'] for x in candidate_news] + [x['category'] for x in clicked_news],
                         dim=1).flatten().to(device)
         class_weight = torch.ones(self.config.num_categories).to(device)
         class_weight[0] = 0

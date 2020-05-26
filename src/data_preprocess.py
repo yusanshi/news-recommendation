@@ -75,18 +75,25 @@ def parse_behaviors(source, target, val_target, user2int_path):
 
     with tqdm(total=len(behaviors), desc="Balancing data") as pbar:
         for row in behaviors.itertuples():
-            positive = [x for x in row.impressions if x.endswith('1')]
+            positive = iter([x for x in row.impressions if x.endswith('1')])
             negative = [x for x in row.impressions if x.endswith('0')]
-            if len(negative) > len(positive) * Config.negative_sampling_ratio:
-                negative = random.sample(
-                    negative,
-                    len(positive) * Config.negative_sampling_ratio)
-            behaviors.at[row.Index, 'impressions'] = positive + negative
+            random.shuffle(negative)
+            negative = iter(negative)
+            pairs = []
+            try:
+                while True:
+                    pair = [next(positive)]
+                    for _ in range(Config.negative_sampling_ratio):
+                        pair.append(next(negative))
+                    pairs.append(pair)
+            except StopIteration:
+                pass
+            behaviors.at[row.Index, 'impressions'] = pairs
             pbar.update(1)
-
-    behaviors = behaviors.explode('impressions').reset_index(drop=True)
-    behaviors['candidate_news'], behaviors[
-        'clicked'] = behaviors.impressions.str.split('-').str
+    behaviors = behaviors.explode('impressions').dropna(
+        subset=["impressions"]).reset_index(drop=True)
+    behaviors[['candidate_news', 'clicked']] = pd.DataFrame(behaviors.impressions.map(lambda x: (
+        ' '.join([e.split('-')[0] for e in x]), ' '.join([e.split('-')[1] for e in x]))).tolist())
     behaviors.to_csv(
         target,
         sep='\t',
@@ -300,7 +307,7 @@ def generate_word_embedding(source, target, word2int_path):
     Generate from pretrained word embedding file
     If a word not in embedding file, initial its embedding by N(0, 1)
     Args:
-        source: path of pretrained word embedding file, e.g. glove.6B.300d.txt
+        source: path of pretrained word embedding file, e.g. glove.840B.300d.txt
         target: path for saving word embedding. Will be saved in numpy format
         word2int_path: vocabulary file when words in it will be searched in pretrained embedding file
     """
@@ -312,7 +319,6 @@ def generate_word_embedding(source, target, word2int_path):
                                      sep=' ',
                                      header=None,
                                      quoting=csv.QUOTE_NONE)
-    source_embedding['vector'] = source_embedding.values.tolist()
     target_embedding = np.random.normal(size=(1 + len(word2int),
                                               Config.word_embedding_dim))
     target_embedding[0] = 0
@@ -322,7 +328,7 @@ def generate_word_embedding(source, target, word2int_path):
               ) as pbar:
         for k, v in word2int.items():
             if k in source_embedding.index:
-                target_embedding[v] = source_embedding.loc[k].vector
+                target_embedding[v] = source_embedding.loc[k].tolist()
             else:
                 word_missed += 1
 
@@ -387,7 +393,7 @@ if __name__ == '__main__':
 
     print('Generate word embedding')
     generate_word_embedding(
-        f'./data/glove/glove.6B.{Config.word_embedding_dim}d.txt',
+        f'./data/glove/glove.840B.{Config.word_embedding_dim}d.txt',
         path.join(train_dir, 'pretrained_word_embedding.npy'),
         path.join(train_dir, 'word2int.tsv'))
 

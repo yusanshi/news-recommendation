@@ -7,7 +7,7 @@ from model.general.click_predictor.dot_product import DotProductClickPredictor
 class NAML(torch.nn.Module):
     """
     NAML network.
-    Input a candidate news and a list of user clicked news, produce the click probability.
+    Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
 
     def __init__(self, config, pretrained_word_embedding):
@@ -21,12 +21,14 @@ class NAML(torch.nn.Module):
         """
         Args:
             candidate_news:
-                {
-                    "category": Tensor(batch_size),
-                    "subcategory": Tensor(batch_size),
-                    "title": Tensor(batch_size) * num_words_title,
-                    "abstract": Tensor(batch_size) * num_words_abstract
-                }
+                [
+                    {
+                        "category": Tensor(batch_size),
+                        "subcategory": Tensor(batch_size),
+                        "title": Tensor(batch_size) * num_words_title,
+                        "abstract": Tensor(batch_size) * num_words_abstract
+                    } * (1 + K)
+                ]
             clicked_news:
                 [
                     {
@@ -39,16 +41,17 @@ class NAML(torch.nn.Module):
         Returns:
             click_probability: batch_size
         """
-        # batch_size, num_filters
-        candidate_news_vector = self.news_encoder(candidate_news)
+        # 1 + K, batch_size, num_filters
+        candidate_news_vector = torch.stack(
+            [self.news_encoder(x) for x in candidate_news])
         # batch_size, num_clicked_news_a_user, num_filters
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
         # batch_size, num_filters
         user_vector = self.user_encoder(clicked_news_vector)
-        # batch_size
-        click_probability = self.click_predictor(candidate_news_vector,
-                                                 user_vector)
+        # batch_size, 1 + K
+        click_probability = torch.stack([self.click_predictor(x,
+                                                              user_vector) for x in candidate_news_vector], dim=1)
         return click_probability
 
     def get_news_vector(self, news):

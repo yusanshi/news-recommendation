@@ -4,3 +4,4 @@ pandas
 tensorboard
 tqdm
 nltk
+scikit-learn

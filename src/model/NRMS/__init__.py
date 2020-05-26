@@ -7,7 +7,7 @@ from model.general.click_predictor.dot_product import DotProductClickPredictor
 class NRMS(torch.nn.Module):
     """
     NRMS network.
-    Input a candidate news and a list of user clicked news, produce the click probability.
+    Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
 
     def __init__(self, config, pretrained_word_embedding):
@@ -21,9 +21,11 @@ class NRMS(torch.nn.Module):
         """
         Args:
             candidate_news:
-                {
-                    "title": Tensor(batch_size) * num_words_title
-                },
+                [
+                    {
+                        "title": Tensor(batch_size) * num_words_title
+                    } * (1 + K)
+                ]
             clicked_news:
                 [
                     {
@@ -31,18 +33,19 @@ class NRMS(torch.nn.Module):
                     } * num_clicked_news_a_user
                 ]
         Returns:
-          click_probability: batch_size
+          click_probability: batch_size, 1 + K
         """
-        # batch_size, word_embedding_dim
-        candidate_news_vector = self.news_encoder(candidate_news)
+        # 1 + K, batch_size, word_embedding_dim
+        candidate_news_vector = torch.stack(
+            [self.news_encoder(x) for x in candidate_news])
         # batch_size, num_clicked_news_a_user, word_embedding_dim
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
         # batch_size, word_embedding_dim
         user_vector = self.user_encoder(clicked_news_vector)
-        # batch_size
-        click_probability = self.click_predictor(candidate_news_vector,
-                                                 user_vector)
+        # batch_size, 1 + K
+        click_probability = torch.stack([self.click_predictor(x,
+                                                              user_vector) for x in candidate_news_vector], dim=1)
         return click_probability
 
     def get_news_vector(self, news):

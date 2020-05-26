@@ -40,7 +40,7 @@ class NewsEncoder(torch.nn.Module):
         self.abstract_attention = AdditiveAttention(config.query_vector_dim,
                                                     config.num_filters)
         self.final_attention = AdditiveAttention(config.query_vector_dim,
-                                                 config.num_filters)
+                                                 config.num_filters, show_weights=True)
 
     def forward(self, news):
         """

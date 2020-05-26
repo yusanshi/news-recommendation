@@ -21,3 +21,4 @@ class DotProductClickPredictor(torch.nn.Module):
             return probability
         else:
             return torch.sigmoid(probability)
+        # TODO

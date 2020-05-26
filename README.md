@@ -27,10 +27,10 @@ Download and preprocess the data.
 ```bash
 mkdir data && cd data
 # Download GloVe pre-trained word embedding
-wget https://nlp.stanford.edu/data/glove.6B.zip
+wget https://nlp.stanford.edu/data/glove.840B.300d.zip
 sudo apt install unzip
-unzip glove.6B.zip -d glove
-rm glove.6B.zip
+unzip glove.840B.300d.zip -d glove
+rm glove.840B.300d.zip
 
 # Download MIND-small dataset
 # By downloading the dataset, you agree to the [Microsoft Research License Terms](https://go.microsoft.com/fwlink/?LinkID=206977). For more detail about the dataset, see https://msnews.github.io/.
@@ -71,6 +71,8 @@ You can visualize the training loss and accuracy with TensorBoard.
 tensorboard --logdir=runs
 ```
 
+> Tip: by adding `REMARK` environment variable, you can make the runs name in TensorBoard more meaningful. For example, `REMARK=num-filters-300-window-size-5 python3 src/train.py`.
+
 ## Results
 
 > Note: many results in the table are not ideal and I'm still trying to improve them😫.
@@ -78,7 +80,7 @@ tensorboard --logdir=runs
 | Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 |
 | --------- | ----- | ----- | ------ | ------- |
 | NRMS      | 64.30 | 30.15 | 33.03  | 39.43   |
-| NAML      | 60.62 | 27.90 | 30.38  | 36.91   |
+| NAML      | 61.12 | 28.10 | 30.92  | 37.13   |
 | LSTUR     |       |       |        |         |
 | DKN       | 58.49 | 25.80 | 27.85  | 34.19   |
 | Hi-Fi Ark |       |       |        |         |

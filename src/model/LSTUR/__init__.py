@@ -11,7 +11,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class LSTUR(torch.nn.Module):
     """
     LSTUR network.
-    Input a candidate news and a list of user clicked news, produce the click probability.
+    Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
 
     def __init__(self, config, pretrained_word_embedding):
@@ -21,7 +21,7 @@ class LSTUR(torch.nn.Module):
         self.user_encoder = UserEncoder(config)
         self.click_predictor = DotProductClickPredictor()
         self.user_embedding = nn.Embedding(config.num_users,
-                                           config.num_filters * 4,
+                                           config.num_filters * 3,
                                            padding_idx=0)
 
     def forward(self, user, clicked_news_length, candidate_news, clicked_news):
@@ -30,43 +30,44 @@ class LSTUR(torch.nn.Module):
             user: batch_size,
             clicked_news_length: batch_size,
             candidate_news:
-                {
-                    "category": Tensor(batch_size),
-                    "subcategory": Tensor(batch_size),
-                    "title": Tensor(batch_size) * num_words_title,
-                    "abstract": Tensor(batch_size) * num_words_abstract
-                }
+                [
+                    {
+                        "category": Tensor(batch_size),
+                        "subcategory": Tensor(batch_size),
+                        "title": Tensor(batch_size) * num_words_title
+                    } * (1 + K)
+                ]
             clicked_news:
                 [
                     {
                         "category": Tensor(batch_size),
                         "subcategory": Tensor(batch_size),
-                        "title": Tensor(batch_size) * num_words_title,
-                        "abstract": Tensor(batch_size) * num_words_abstract
+                        "title": Tensor(batch_size) * num_words_title
                     } * num_clicked_news_a_user
                 ]
         Returns:
             click_probability: batch_size
         """
-        # batch_size, num_filters * 4
-        candidate_news_vector = self.news_encoder(candidate_news)
-        # batch_size, num_filters * 4
+        # 1 + K, batch_size, num_filters * 3
+        candidate_news_vector = torch.stack(
+            [self.news_encoder(x) for x in candidate_news])
+        # batch_size, num_filters * 3
         user = F.dropout(self.user_embedding(user.to(device)),
                          p=self.config.masking_probability,
                          training=self.training)
-        # batch_size, num_clicked_news_a_user, num_filters * 4
+        # batch_size, num_clicked_news_a_user, num_filters * 3
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
-        # batch_size, num_filters * 4
+        # batch_size, num_filters * 3
         user_vector = self.user_encoder(user, clicked_news_length,
                                         clicked_news_vector)
-        # batch_size
-        click_probability = self.click_predictor(candidate_news_vector,
-                                                 user_vector)
+        # batch_size, 1 + K
+        click_probability = torch.stack([self.click_predictor(x,
+                                                              user_vector) for x in candidate_news_vector], dim=1)
         return click_probability
 
     def get_news_vector(self, news):
-        # batch_size, num_filters * 4
+        # batch_size, num_filters * 3
         return self.news_encoder(news)
 
     def get_user_vector(self, user, clicked_news_length, clicked_news_vector):
@@ -74,21 +75,21 @@ class LSTUR(torch.nn.Module):
         Args:
             user: batch_size
             clicked_news_length: batch_size
-            clicked_news_vector: batch_size, num_clicked_news_a_user, num_filters * 4
+            clicked_news_vector: batch_size, num_clicked_news_a_user, num_filters * 3
         Returns:
-            (shape) batch_size, num_filters * 4
+            (shape) batch_size, num_filters * 3
         """
-        # batch_size, num_filters * 4
+        # batch_size, num_filters * 3
         user = self.user_embedding(user.to(device))
-        # batch_size, num_filters * 4
+        # batch_size, num_filters * 3
         return self.user_encoder(user, clicked_news_length,
                                  clicked_news_vector)
 
     def get_prediction(self, news_vector, user_vector):
         """
         Args:
-            news_vector: num_filters * 4
-            user_vector: num_filters * 4
+            news_vector: num_filters * 3
+            user_vector: num_filters * 3
         Returns:
             click_probability: 0-dim tensor
         """

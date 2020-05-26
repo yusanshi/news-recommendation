@@ -9,7 +9,7 @@ from model.general.attention.similarity import SimilarityAttention
 class HiFiArk(torch.nn.Module):
     """
     NAML network.
-    Input a candidate news and a list of user clicked news, produce the click probability.
+    Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
 
     def __init__(self, config, pretrained_word_embedding):
@@ -25,9 +25,11 @@ class HiFiArk(torch.nn.Module):
         """
         Args:
             candidate_news:
-                {
-                    "title": Tensor(batch_size) * num_words_title
-                }
+                [
+                    {
+                        "title": Tensor(batch_size) * num_words_title
+                    } * (1 + K)
+                ]
             clicked_news:
                 [
                     {
@@ -35,11 +37,12 @@ class HiFiArk(torch.nn.Module):
                     } * num_clicked_news_a_user
                 ]
         Returns:
-            click_probability: batch_size
+            click_probability: batch_size, 1 + K
             regularizer_loss: 0-dim tensor
         """
-        # batch_size, num_filters
-        candidate_news_vector = self.news_encoder(candidate_news)
+        # 1 + K, batch_size, num_filters
+        candidate_news_vector = torch.stack(
+            [self.news_encoder(x) for x in candidate_news])
         # batch_size, num_clicked_news_a_user, num_filters
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
@@ -49,12 +52,12 @@ class HiFiArk(torch.nn.Module):
         # batch_size, num_pooling_heads, num_filters
         user_archive_vector, regularizer_loss = self.omap(
             self_attended_clicked_news_vector, clicked_news_vector)
-        # batch_size, num_filters
-        user_vector = self.similarity_attention(candidate_news_vector,
-                                                user_archive_vector)
-        # batch_size
-        click_probability = self.click_predictor(candidate_news_vector,
-                                                 user_vector)
+        # 1 + K, batch_size, num_filters
+        user_vector = torch.stack([self.similarity_attention(x,
+                                                             user_archive_vector) for x in candidate_news_vector])
+        # batch_size, 1 + K
+        click_probability = torch.stack([self.click_predictor(x,
+                                                              y) for x, y in zip(candidate_news_vector, user_vector)], dim=1)
         return click_probability, regularizer_loss
 
     def get_news_vector(self, news):

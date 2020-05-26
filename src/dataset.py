@@ -59,9 +59,9 @@ class BaseDataset(Dataset):
         row = self.behaviors_parsed.iloc[idx]
         if 'user' in self.attributes['record']:
             item['user'] = row.user
-        item["clicked"] = row.clicked
-        item["candidate_news"] = news2dict(row.candidate_news,
-                                           self.news_parsed)
+        item["clicked"] = list(map(int, row.clicked.split()))
+        item["candidate_news"] = [news2dict(x, self.news_parsed)
+                                  for x in row.candidate_news.split()]
         item["clicked_news"] = [
             news2dict(x, self.news_parsed)
             for x in row.clicked_news.split()[:Config.num_clicked_news_a_user]

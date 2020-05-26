@@ -7,18 +7,18 @@ class UserEncoder(torch.nn.Module):
     def __init__(self, config):
         super(UserEncoder, self).__init__()
         self.config = config
-        self.gru = nn.GRU(config.num_filters * 4, config.num_filters * 4)
+        self.gru = nn.GRU(config.num_filters * 3, config.num_filters * 3)
 
     def forward(self, user, clicked_news_length, clicked_news_vector):
         """
         Args:
-            user: batch_size, num_filters * 4,
+            user: batch_size, num_filters * 3,
             clicked_news_length: batch_size,
-            clicked_news_vector: batch_size, num_clicked_news_a_user, num_filters * 4
+            clicked_news_vector: batch_size, num_clicked_news_a_user, num_filters * 3
         Returns:
-            (shape) batch_size, num_filters * 4
+            (shape) batch_size, num_filters * 3
         """
-        # 1, batch_size, num_filters * 4
+        # 1, batch_size, num_filters * 3
         if self.config.long_short_term_method == 'ini':
             packed_clicked_news_vector = pack_padded_sequence(
                 clicked_news_vector,

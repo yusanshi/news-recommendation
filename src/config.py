@@ -17,7 +17,7 @@ class BaseConfig():
     batch_size = 128
     learning_rate = 0.001
     validation_proportion = 0.1
-    num_workers = 0  # Number of workers for data loading
+    num_workers = 4  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
     # Whether try to load checkpoint
     load_checkpoint = os.environ[
@@ -27,7 +27,7 @@ class BaseConfig():
     word_freq_threshold = 3
     entity_freq_threshold = 3
     entity_confidence_threshold = 0.5
-    negative_sampling_ratio = 4
+    negative_sampling_ratio = 4  # K
     dropout_probability = 0.2
     # Modify the following by the output of `src/dataprocess.py`
     num_words = 1 + 31313
@@ -62,7 +62,7 @@ class NAMLConfig(BaseConfig):
 
 class LSTURConfig(BaseConfig):
     dataset_attributes = {
-        "news": ['category', 'subcategory', 'title', 'abstract'],
+        "news": ['category', 'subcategory', 'title'],
         "record": ['user', 'clicked_news_length']
     }
     # For CNN

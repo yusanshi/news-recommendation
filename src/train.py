@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from dataset import BaseDataset
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 import time
 import numpy as np
 from config import model_name
@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 from evaluate import evaluate
 import importlib
+import datetime
 
 try:
     Model = getattr(importlib.import_module(f"model.{model_name}"), model_name)
@@ -36,7 +37,8 @@ def latest_checkpoint(directory):
 
 
 def train():
-    writer = SummaryWriter(log_dir=f"./runs/{model_name}")
+    writer = SummaryWriter(
+        log_dir=f"./runs/{model_name}/{datetime.datetime.now().replace(microsecond=0).isoformat()}{'-' + os.environ['REMARK'] if 'REMARK' in os.environ else ''}")
 
     if not os.path.exists('checkpoint'):
         os.makedirs('checkpoint')
@@ -84,8 +86,6 @@ def train():
                    num_workers=Config.num_workers,
                    drop_last=True))
 
-    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(
-        [Config.negative_sampling_ratio]).float().to(device))
     optimizer = torch.optim.Adam(model.parameters(), lr=Config.learning_rate)
     start_time = time.time()
     loss_full = []
@@ -136,8 +136,9 @@ def train():
             else:
                 y_pred = model(minibatch["candidate_news"],
                                minibatch["clicked_news"])
-            y = minibatch["clicked"].float().to(device)
-            loss = criterion(y_pred, y)
+
+            loss = torch.stack([x[0]
+                                for x in - F.log_softmax(y_pred, dim=1)]).mean()
             if model_name == 'HiFiArk':
                 # if i % 10 == 0:
                 #     print(loss.item(), '\t', regularizer_loss.item())
@@ -167,14 +168,14 @@ def train():
                 )
 
             if i % Config.num_batches_validate == 0:
-                val_auc, val_mrr, val_ndcg5, val_ncg10 = evaluate(
+                val_auc, val_mrr, val_ndcg5, val_ndcg10 = evaluate(
                     model, './data/val')
                 writer.add_scalar('Validation/AUC', val_auc, i)
                 writer.add_scalar('Validation/MRR', val_mrr, i)
                 writer.add_scalar('Validation/nDCG@5', val_ndcg5, i)
-                writer.add_scalar('Validation/nDCG@10', val_ncg10, i)
+                writer.add_scalar('Validation/nDCG@10', val_ndcg10, i)
                 tqdm.write(
-                    f"Time {time_since(start_time)}, batches {i}, validation AUC: {val_auc:.6f}, validation MRR: {val_mrr:.6f}, validation nDCG@5: {val_ndcg5:.6f}, validation nDCG@10: {val_ncg10:.6f}, "
+                    f"Time {time_since(start_time)}, batches {i}, validation AUC: {val_auc:.6f}, validation MRR: {val_mrr:.6f}, validation nDCG@5: {val_ndcg5:.6f}, validation nDCG@10: {val_ndcg10:.6f}, "
                 )
 
             pbar.update(1)
