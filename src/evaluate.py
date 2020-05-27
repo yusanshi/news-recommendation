@@ -83,8 +83,7 @@ class UserDataset(Dataset):
                                        header=None,
                                        usecols=[0, 2],
                                        names=['user', 'clicked_news'])
-        # This line is unexpected!
-        self.behaviors.dropna(subset=["clicked_news"], inplace=True)
+        self.behaviors.clicked_news.fillna(' ', inplace=True)
         self.behaviors.drop_duplicates(inplace=True)
         user2int = dict(pd.read_table(user2int_path).values.tolist())
         for row in self.behaviors.itertuples():
@@ -124,8 +123,7 @@ class BehaviorsDataset(Dataset):
                                        header=None,
                                        usecols=[2, 3],
                                        names=['clicked_news', 'impressions'])
-        # This line is unexpected!
-        self.behaviors.dropna(subset=["clicked_news"], inplace=True)
+        self.behaviors.clicked_news.fillna(' ', inplace=True)
         self.behaviors.impressions = self.behaviors.impressions.str.split()
 
     def __len__(self):

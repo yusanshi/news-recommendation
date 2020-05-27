@@ -18,6 +18,7 @@ class UserEncoder(torch.nn.Module):
         Returns:
             (shape) batch_size, num_filters * 3
         """
+        # TODO if clicked_news_length == 0, then clicked_news_length = 1
         # 1, batch_size, num_filters * 3
         if self.config.long_short_term_method == 'ini':
             packed_clicked_news_vector = pack_padded_sequence(

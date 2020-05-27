@@ -27,10 +27,14 @@ Download and preprocess the data.
 ```bash
 mkdir data && cd data
 # Download GloVe pre-trained word embedding
-wget https://nlp.stanford.edu/data/glove.840B.300d.zip
+wget https://nlp.stanford.edu/data/glove.6B.zip
 sudo apt install unzip
-unzip glove.840B.300d.zip -d glove
-rm glove.840B.300d.zip
+unzip glove.6B.zip -d glove
+rm glove.6B.zip
+
+# You can also use glove.840B.300d.zip instead.
+# https://nlp.stanford.edu/data/glove.840B.300d.zip
+# But remember to replace `6B` with `840B` in `data_preprocess.py`.
 
 # Download MIND-small dataset
 # By downloading the dataset, you agree to the [Microsoft Research License Terms](https://go.microsoft.com/fwlink/?LinkID=206977). For more detail about the dataset, see https://msnews.github.io/.
@@ -79,13 +83,17 @@ tensorboard --logdir=runs
 
 | Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 |
 | --------- | ----- | ----- | ------ | ------- |
-| NRMS      | 64.30 | 30.15 | 33.03  | 39.43   |
-| NAML      | 61.12 | 28.10 | 30.92  | 37.13   |
+| NRMS      | 64.19 | 29.89 | 32.52  | 38.89   |
+| NAML      | 66.62 | 31.75 | 35.07  | 41.26   |
 | LSTUR     |       |       |        |         |
-| DKN       | 58.49 | 25.80 | 27.85  | 34.19   |
+| DKN       |       |       |        |         |
 | Hi-Fi Ark |       |       |        |         |
-| TANR      |       |       |        |         |
+| TANR      | 66.09 | 31.15 | 34.22  | 40.46   |
 | FIM       |       |       |        |         |
+
+Checkpoint files for NRMS, NAML and TANR: <https://rec.ustc.edu.cn/share/66bcfca0-a019-11ea-986f-397d3e966104>
+
+You can verify the results by simply extract them and then run `MODEL_NAME=XXXX python3 src/evaluate.py`.
 
 ## Credits
 

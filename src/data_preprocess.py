@@ -39,8 +39,7 @@ def parse_behaviors(source, target, val_target, user2int_path):
         header=None,
         usecols=range(4),
         names=['user', 'time', 'clicked_news', 'impressions'])
-    # This line is unexpected!
-    behaviors.dropna(subset=["clicked_news"], inplace=True)
+    behaviors.clicked_news.fillna(' ', inplace=True)
     behaviors.impressions = behaviors.impressions.str.split()
 
     user2int = {}
