@@ -17,8 +17,5 @@ class DotProductClickPredictor(torch.nn.Module):
         probability = torch.bmm(
             user_vector.unsqueeze(dim=1),
             candidate_news_vector.unsqueeze(dim=2)).flatten()
-        if self.training:
-            return probability
-        else:
-            return torch.sigmoid(probability)
         # TODO
+        return probability

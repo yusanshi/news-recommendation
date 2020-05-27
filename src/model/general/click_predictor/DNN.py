@@ -9,16 +9,11 @@ class DNNClickPredictor(torch.nn.Module):
         if hidden_size is None:
             # TODO: is sqrt(input_size) a good default value?
             hidden_size = int(sqrt(input_size))
-        if self.training:
-            self.dnn = nn.Sequential(
-                nn.Linear(input_size, hidden_size),
-                nn.ReLU(),
-                nn.Linear(hidden_size, 1),
-            )
-        else:
-            self.dnn = nn.Sequential(nn.Linear(input_size, hidden_size),
-                                     nn.ReLU(), nn.Linear(hidden_size, 1),
-                                     nn.Sigmoid())
+        self.dnn = nn.Sequential(
+            nn.Linear(input_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, 1),
+        )
 
     def forward(self, candidate_news_vector, user_vector):
         """

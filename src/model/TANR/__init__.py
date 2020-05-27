@@ -54,7 +54,6 @@ class TANR(torch.nn.Module):
         click_probability = torch.stack([self.click_predictor(x,
                                                               user_vector) for x in candidate_news_vector], dim=1)
 
-        # TODO
         # X = batch_size * (1 + K + num_clicked_news_a_user)
         # X, num_categories
         y_pred = self.topic_predictor(

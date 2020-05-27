@@ -79,8 +79,6 @@ tensorboard --logdir=runs
 
 ## Results
 
-> Note: many results in the table are not ideal and I'm still trying to improve them😫.
-
 | Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 |
 | --------- | ----- | ----- | ------ | ------- |
 | NRMS      | 64.19 | 29.89 | 32.52  | 38.89   |

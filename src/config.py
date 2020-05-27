@@ -93,7 +93,7 @@ class HiFiArkConfig(BaseConfig):
     num_filters = 300
     window_size = 3
     num_pooling_heads = 5
-    regularizer_loss_weight = 4.0  # TODO
+    regularizer_loss_weight = 8.0  # TODO
 
 
 class TANRConfig(BaseConfig):
@@ -104,7 +104,7 @@ class TANRConfig(BaseConfig):
     # For CNN
     num_filters = 300
     window_size = 3
-    topic_classification_loss_weight = 0.1  # TODO
+    topic_classification_loss_weight = 0.2  # TODO
 
 
 class FIMConfig(BaseConfig):

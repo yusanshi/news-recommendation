@@ -306,7 +306,7 @@ def generate_word_embedding(source, target, word2int_path):
     Generate from pretrained word embedding file
     If a word not in embedding file, initial its embedding by N(0, 1)
     Args:
-        source: path of pretrained word embedding file, e.g. glove.840B.300d.txt
+        source: path of pretrained word embedding file, e.g. glove.6B.300d.txt
         target: path for saving word embedding. Will be saved in numpy format
         word2int_path: vocabulary file when words in it will be searched in pretrained embedding file
     """
@@ -392,7 +392,7 @@ if __name__ == '__main__':
 
     print('Generate word embedding')
     generate_word_embedding(
-        f'./data/glove/glove.840B.{Config.word_embedding_dim}d.txt',
+        f'./data/glove/glove.6B.{Config.word_embedding_dim}d.txt',
         path.join(train_dir, 'pretrained_word_embedding.npy'),
         path.join(train_dir, 'word2int.tsv'))
 
