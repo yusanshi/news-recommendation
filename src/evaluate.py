@@ -5,6 +5,7 @@ import torch
 from config import model_name
 from torch.utils.data import Dataset, DataLoader
 import os
+import json
 import pandas as pd
 from ast import literal_eval
 import importlib
@@ -121,8 +122,8 @@ class BehaviorsDataset(Dataset):
         super(BehaviorsDataset, self).__init__()
         self.behaviors = pd.read_table(behaviors_path,
                                        header=None,
-                                       usecols=[2, 3],
-                                       names=['clicked_news', 'impressions'])
+                                       usecols=range(4),
+                                       names=['user', 'time', 'clicked_news', 'impressions'])
         self.behaviors.clicked_news.fillna(' ', inplace=True)
         self.behaviors.impressions = self.behaviors.impressions.str.split()
 
@@ -132,6 +133,8 @@ class BehaviorsDataset(Dataset):
     def __getitem__(self, idx):
         row = self.behaviors.iloc[idx]
         item = {
+            "user": row.user,
+            "time": row.time,
             "clicked_news_string": row.clicked_news,
             "impressions": row.impressions
         }
@@ -139,12 +142,14 @@ class BehaviorsDataset(Dataset):
 
 
 @torch.no_grad()
-def evaluate(model, directory):
+def evaluate(model, directory, generate_json=False, json_path=None):
     """
     Evaluate model on target directory.
     Args:
         model: model to be evaluated
         directory: the directory that contains two files (behaviors.tsv, news_parsed.tsv)
+        generate_json: whether to generate json file from inference result
+        json_path: file path
     Returns:
         AUC
         nMRR
@@ -216,17 +221,27 @@ def evaluate(model, directory):
     mrrs = []
     ndcg5s = []
     ndcg10s = []
+    if generate_json:
+        answer_file = open(json_path, 'w')
     with tqdm(total=len(behaviors_dataloader),
               desc="Calculating probabilities") as pbar:
         for minibatch in behaviors_dataloader:
-
-            y_pred_list = [
-                model.get_prediction(
-                    news2vector[news[0].split('-')[0]],
-                    user2vector[minibatch['clicked_news_string'][0]]).item()
+            impression = {
+                news[0].split('-')[0][1:]: model.get_prediction(
+                    news2vector[news[0].split('-')[0]], user2vector[
+                        minibatch['clicked_news_string'][0]]).item()
                 for news in minibatch['impressions']
-            ]
+            }
 
+            if generate_json:
+                session = {
+                    "uid": minibatch['user'][0][1:],
+                    "time": minibatch['time'][0],
+                    "impression": impression
+                }
+                answer_file.write(json.dumps(session) + '\n')
+
+            y_pred_list = list(impression.values())
             y_list = [
                 int(news[0].split('-')[1]) for news in minibatch['impressions']
             ]
@@ -242,6 +257,9 @@ def evaluate(model, directory):
             ndcg10s.append(ndcg10)
 
             pbar.update(1)
+
+    if generate_json:
+        answer_file.close()
 
     return np.mean(aucs), np.mean(mrrs), np.mean(ndcg5s), np.mean(ndcg10s)
 
@@ -280,7 +298,8 @@ if __name__ == '__main__':
     checkpoint = torch.load(checkpoint_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
-    auc, mrr, ndcg5, ndcg10 = evaluate(model, './data/test')
+    auc, mrr, ndcg5, ndcg10 = evaluate(
+        model, './data/test', True, './data/test/answer.json')
     print(
         f'AUC: {auc:.4f}\nMRR: {mrr:.4f}\nnDCG@5: {ndcg5:.4f}\nnDCG@10: {ndcg10:.4f}'
     )

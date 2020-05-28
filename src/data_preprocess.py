@@ -364,6 +364,31 @@ def transform_entity_embedding(source, target, entity2int_path):
     np.save(target, entity_embedding_transformed)
 
 
+def transform2json(source, target):
+    """
+    Transform behaviors file in tsv to json
+    """
+    behaviors = pd.read_table(
+        source,
+        header=None,
+        names=['uid', 'time', 'clicked_news', 'impression'])
+    f = open(target, "w")
+    with tqdm(total=len(behaviors), desc="Transforming tsv to json") as pbar:
+        for row in behaviors.itertuples(index=False):
+            item = {}
+            item['uid'] = row.uid[1:]
+            item['time'] = row.time
+            item['impression'] = {
+                x.split('-')[0][1:]: int(x.split('-')[1])
+                for x in row.impression.split()
+            }
+            f.write(json.dumps(item) + '\n')
+
+            pbar.update(1)
+
+    f.close()
+
+
 if __name__ == '__main__':
     train_dir = './data/train'
     val_dir = './data/val'
@@ -403,6 +428,10 @@ if __name__ == '__main__':
         path.join(train_dir, 'entity2int.tsv'))
 
     print('\nProcess data for evaluation')
+
+    print('Transform test data')
+    transform2json(path.join(test_dir, 'behaviors.tsv'),
+                   path.join(test_dir, 'truth.json'))
 
     print('Parse news')
     parse_news(path.join(test_dir, 'news.tsv'),
