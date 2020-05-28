@@ -90,7 +90,7 @@ def train():
     start_time = time.time()
     loss_full = []
     exhaustion_count = 0
-    epoch = 0
+    step = 0
 
     checkpoint_dir = os.path.join('./checkpoint', model_name)
     Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
@@ -101,7 +101,7 @@ def train():
             checkpoint = torch.load(checkpoint_path)
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            epoch = checkpoint['epoch']
+            step = checkpoint['step']
             model.train()
 
     with tqdm(total=Config.num_batches, desc="Training") as pbar:
@@ -121,7 +121,7 @@ def train():
                                drop_last=True))
                 minibatch = next(dataloader)
 
-            epoch += 1
+            step += 1
             if model_name == 'LSTUR':
                 y_pred = model(minibatch["user"],
                                minibatch["clicked_news_length"],
@@ -161,12 +161,12 @@ def train():
                     {
                         'model_state_dict': model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
-                        'epoch': epoch
-                    }, f"./checkpoint/{model_name}/ckpt-{epoch}.pth")
+                        'step': step
+                    }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
 
-            if i % Config.num_batches_batch_loss == 0:
+            if i % Config.num_batches_show_loss == 0:
                 tqdm.write(
-                    f"Time {time_since(start_time)}, batches {i}, current loss {loss.item():.6f}, average loss: {np.mean(loss_full):.6f}"
+                    f"Time {time_since(start_time)}, batches {i}, current loss {loss.item():.4f}, average loss: {np.mean(loss_full):.4f}"
                 )
 
             if i % Config.num_batches_validate == 0:
@@ -177,17 +177,18 @@ def train():
                 writer.add_scalar('Validation/nDCG@5', val_ndcg5, i)
                 writer.add_scalar('Validation/nDCG@10', val_ndcg10, i)
                 tqdm.write(
-                    f"Time {time_since(start_time)}, batches {i}, validation AUC: {val_auc:.6f}, validation MRR: {val_mrr:.6f}, validation nDCG@5: {val_ndcg5:.6f}, validation nDCG@10: {val_ndcg10:.6f}, "
+                    f"Time {time_since(start_time)}, batches {i}, validation AUC: {val_auc:.4f}, validation MRR: {val_mrr:.4f}, validation nDCG@5: {val_ndcg5:.4f}, validation nDCG@10: {val_ndcg10:.4f}, "
                 )
 
             pbar.update(1)
 
-    torch.save(
-        {
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'epoch': epoch
-        }, f"./checkpoint/{model_name}/ckpt-{epoch}.pth")
+    if Config.num_batches % Config.num_batches_save_checkpoint != 0:
+        torch.save(
+            {
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'step': step
+            }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
 
 
 def time_since(since):

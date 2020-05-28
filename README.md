@@ -73,6 +73,10 @@ You can visualize metrics with TensorBoard.
 
 ```bash
 tensorboard --logdir=runs
+
+# or
+tensorboard --logdir=runs/{model_name}
+# for a specific model
 ```
 
 > Tip: by adding `REMARK` environment variable, you can make the runs name in TensorBoard more meaningful. For example, `REMARK=num-filters-300-window-size-5 python3 src/train.py`.

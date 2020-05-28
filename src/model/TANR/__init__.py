@@ -41,6 +41,7 @@ class TANR(torch.nn.Module):
                 ]
         Returns:
             click_probability: batch_size, 1 + K
+            topic_classification_loss: 0-dim tensor
         """
         # 1 + K, batch_size, num_filters
         candidate_news_vector = torch.stack(
@@ -54,14 +55,13 @@ class TANR(torch.nn.Module):
         click_probability = torch.stack([self.click_predictor(x,
                                                               user_vector) for x in candidate_news_vector], dim=1)
 
-        # X = batch_size * (1 + K + num_clicked_news_a_user)
-        # X, num_categories
+        # batch_size * (1 + K + num_clicked_news_a_user), num_categories
         y_pred = self.topic_predictor(
             torch.cat(
                 (candidate_news_vector.transpose(0, 1), clicked_news_vector),
                 dim=1).view(-1, self.config.num_filters))
-        # X
-        y = torch.stack([x['category'] for x in candidate_news] + [x['category'] for x in clicked_news],
+        # batch_size * (1 + K + num_clicked_news_a_user)
+        y = torch.stack([x['category'] for x in candidate_news + clicked_news],
                         dim=1).flatten().to(device)
         class_weight = torch.ones(self.config.num_categories).to(device)
         class_weight[0] = 0
