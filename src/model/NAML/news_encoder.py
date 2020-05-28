@@ -7,7 +7,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class NewsEncoder(torch.nn.Module):
-    def __init__(self, config, pretrained_word_embedding):
+    def __init__(self, config, pretrained_word_embedding, writer):
         super(NewsEncoder, self).__init__()
         self.config = config
         if pretrained_word_embedding is None:
@@ -40,7 +40,10 @@ class NewsEncoder(torch.nn.Module):
         self.abstract_attention = AdditiveAttention(config.query_vector_dim,
                                                     config.num_filters)
         self.final_attention = AdditiveAttention(config.query_vector_dim,
-                                                 config.num_filters)
+                                                 config.num_filters, writer,
+                                                 'Train/NewsAttentionWeight',
+                                                 ['category', 'subcategory',
+                                                  'title', 'abstract'])
 
     def forward(self, news):
         """

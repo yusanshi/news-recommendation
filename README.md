@@ -69,7 +69,7 @@ chmod +x run.sh
 ./run.sh
 ```
 
-You can visualize the training loss and accuracy with TensorBoard.
+You can visualize metrics with TensorBoard.
 
 ```bash
 tensorboard --logdir=runs
@@ -91,7 +91,7 @@ tensorboard --logdir=runs
 
 Checkpoint files for NRMS, NAML and TANR: <https://rec.ustc.edu.cn/share/66bcfca0-a019-11ea-986f-397d3e966104>
 
-You can verify the results by simply extract them and then run `MODEL_NAME=XXXX python3 src/evaluate.py`.
+You can verify the results by simply extracting them and running `MODEL_NAME=XXXX python3 src/evaluate.py`.
 
 ## Credits
 

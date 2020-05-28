@@ -67,9 +67,9 @@ def train():
 
         model = Model(Config, pretrained_word_embedding,
                       pretrained_entity_embedding,
-                      pretrained_context_embedding).to(device)
+                      pretrained_context_embedding, writer).to(device)
     else:
-        model = Model(Config, pretrained_word_embedding).to(device)
+        model = Model(Config, pretrained_word_embedding, writer).to(device)
 
     print(model)
 
@@ -140,12 +140,14 @@ def train():
             loss = torch.stack([x[0]
                                 for x in - F.log_softmax(y_pred, dim=1)]).mean()
             if model_name == 'HiFiArk':
-                # if i % 10 == 0:
-                #     print(loss.item(), '\t', regularizer_loss.item())
+                writer.add_scalar('Train/BaseLoss', loss.item(), i)
+                writer.add_scalar('Train/RegularizerLoss',
+                                  regularizer_loss.item(), i)
                 loss += Config.regularizer_loss_weight * regularizer_loss
             elif model_name == 'TANR':
-                # if i % 10 == 0:
-                #     print(loss.item(), '\t', topic_classification_loss.item())
+                writer.add_scalar('Train/BaseLoss', loss.item(), i)
+                writer.add_scalar('Train/TopicClassificationLoss',
+                                  topic_classification_loss.item(), i)
                 loss += Config.topic_classification_loss_weight * topic_classification_loss
             loss_full.append(loss.item())
             optimizer.zero_grad()

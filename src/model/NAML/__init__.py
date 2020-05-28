@@ -10,10 +10,10 @@ class NAML(torch.nn.Module):
     Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
 
-    def __init__(self, config, pretrained_word_embedding):
+    def __init__(self, config, pretrained_word_embedding, writer=None):
         super(NAML, self).__init__()
         self.config = config
-        self.news_encoder = NewsEncoder(config, pretrained_word_embedding)
+        self.news_encoder = NewsEncoder(config, pretrained_word_embedding, writer)
         self.user_encoder = UserEncoder(config)
         self.click_predictor = DotProductClickPredictor()
 
