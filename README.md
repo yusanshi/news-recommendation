@@ -85,12 +85,12 @@ tensorboard --logdir=runs/{model_name}
 | NRMS      | 64.19 | 29.89 | 32.52  | 38.89   |
 | NAML      | 66.77 | 31.63 | 34.80  | 41.11   |
 | LSTUR     |       |       |        |         |
-| DKN       | 59.58 | 25.69 | 27.85  | 34.41   |
+| DKN       | 60.48 | 27.48 | 30.07  | 36.46   |
 | Hi-Fi Ark |       |       |        |         |
 | TANR      | 66.09 | 31.15 | 34.22  | 40.46   |
 | FIM       |       |       |        |         |
 
-Checkpoint files for NRMS, NAML and TANR: <https://rec.ustc.edu.cn/share/66bcfca0-a019-11ea-986f-397d3e966104>
+Checkpoints: <https://drive.google.com/open?id=1GbhxYd2qifRImFK4b883x7xXU-lpoJx->
 
 You can verify the results by simply extracting them and running `MODEL_NAME=XXXX python3 src/evaluate.py`.
 

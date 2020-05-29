@@ -26,8 +26,8 @@ class KCNN(torch.nn.Module):
         self.entity_embedding = pretrained_entity_embedding
         self.context_embedding = pretrained_context_embedding
         self.transform_matrix = nn.Parameter(
-            torch.empty(self.config.word_embedding_dim,
-                        self.config.entity_embedding_dim).uniform_(-0.1, 0.1))
+            torch.empty(self.config.entity_embedding_dim,
+                        self.config.word_embedding_dim).uniform_(-0.1, 0.1))
         self.transform_bias = nn.Parameter(
             torch.empty(self.config.word_embedding_dim).uniform_(-0.1, 0.1))
 
@@ -64,27 +64,20 @@ class KCNN(torch.nn.Module):
                 torch.stack(news["title_entities"], dim=1),
                 self.context_embedding).to(device)
 
-        # The abbreviations are the same as those in paper
-        b = word_vector.size(0)  # TODO
-        n = self.config.num_words_title
-        d = self.config.word_embedding_dim
-        k = self.config.entity_embedding_dim
-
-        # TODO TOO ugly!
         # batch_size, num_words_title, word_embedding_dim
         transformed_entity_vector = torch.tanh(
             torch.add(
-                torch.bmm(self.transform_matrix.expand(b * n, -1, -1),
-                          entity_vector.view(b * n, k, 1)).view(b, n, d),
-                self.transform_bias.expand(b, n, -1)))
+                torch.matmul(
+                    entity_vector, self.transform_matrix), self.transform_bias
+            ))
 
         if self.context_embedding is not None:
             # batch_size, num_words_title, word_embedding_dim
             transformed_context_vector = torch.tanh(
                 torch.add(
-                    torch.bmm(self.transform_matrix.expand(b * n, -1, -1),
-                              context_vector.view(b * n, k, 1)).view(b, n, d),
-                    self.transform_bias.expand(b, n, -1)))
+                    torch.matmul(
+                        context_vector, self.transform_matrix), self.transform_bias
+                ))
 
             # batch_size, 3, num_words_title, word_embedding_dim
             multi_channel_vector = torch.stack([
