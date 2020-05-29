@@ -8,7 +8,7 @@ from model.general.attention.similarity import SimilarityAttention
 
 class HiFiArk(torch.nn.Module):
     """
-    NAML network.
+    Hi-Fi Ark network.
     Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
 
