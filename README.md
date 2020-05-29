@@ -27,14 +27,10 @@ Download and preprocess the data.
 ```bash
 mkdir data && cd data
 # Download GloVe pre-trained word embedding
-wget https://nlp.stanford.edu/data/glove.6B.zip
+wget https://nlp.stanford.edu/data/glove.840B.300d.zip
 sudo apt install unzip
-unzip glove.6B.zip -d glove
-rm glove.6B.zip
-
-# You can also use glove.840B.300d.zip instead.
-# https://nlp.stanford.edu/data/glove.840B.300d.zip
-# But remember to replace `6B` with `840B` in `data_preprocess.py`.
+unzip glove.840B.300d.zip -d glove
+rm glove.840B.300d.zip
 
 # Download MIND-small dataset
 # By downloading the dataset, you agree to the [Microsoft Research License Terms](https://go.microsoft.com/fwlink/?LinkID=206977). For more detail about the dataset, see https://msnews.github.io/.
@@ -87,7 +83,7 @@ tensorboard --logdir=runs/{model_name}
 | Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 |
 | --------- | ----- | ----- | ------ | ------- |
 | NRMS      | 64.19 | 29.89 | 32.52  | 38.89   |
-| NAML      | 66.62 | 31.75 | 35.07  | 41.26   |
+| NAML      | 66.77 | 31.63 | 34.80  | 41.11   |
 | LSTUR     |       |       |        |         |
 | DKN       |       |       |        |         |
 | Hi-Fi Ark |       |       |        |         |

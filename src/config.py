@@ -104,7 +104,7 @@ class TANRConfig(BaseConfig):
     # For CNN
     num_filters = 300
     window_size = 3
-    topic_classification_loss_weight = 0.2  # TODO
+    topic_classification_loss_weight = 0.1
 
 
 class FIMConfig(BaseConfig):

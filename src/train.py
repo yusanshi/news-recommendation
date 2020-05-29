@@ -140,21 +140,21 @@ def train():
             loss = torch.stack([x[0]
                                 for x in - F.log_softmax(y_pred, dim=1)]).mean()
             if model_name == 'HiFiArk':
-                writer.add_scalar('Train/BaseLoss', loss.item(), i)
+                writer.add_scalar('Train/BaseLoss', loss.item(), step)
                 writer.add_scalar('Train/RegularizerLoss',
-                                  regularizer_loss.item(), i)
+                                  regularizer_loss.item(), step)
                 loss += Config.regularizer_loss_weight * regularizer_loss
             elif model_name == 'TANR':
-                writer.add_scalar('Train/BaseLoss', loss.item(), i)
+                writer.add_scalar('Train/BaseLoss', loss.item(), step)
                 writer.add_scalar('Train/TopicClassificationLoss',
-                                  topic_classification_loss.item(), i)
+                                  topic_classification_loss.item(), step)
                 loss += Config.topic_classification_loss_weight * topic_classification_loss
             loss_full.append(loss.item())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            writer.add_scalar('Train/Loss', loss.item(), i)
+            writer.add_scalar('Train/Loss', loss.item(), step)
 
             if i % Config.num_batches_save_checkpoint == 0:
                 torch.save(
@@ -172,10 +172,10 @@ def train():
             if i % Config.num_batches_validate == 0:
                 val_auc, val_mrr, val_ndcg5, val_ndcg10 = evaluate(
                     model, './data/val')
-                writer.add_scalar('Validation/AUC', val_auc, i)
-                writer.add_scalar('Validation/MRR', val_mrr, i)
-                writer.add_scalar('Validation/nDCG@5', val_ndcg5, i)
-                writer.add_scalar('Validation/nDCG@10', val_ndcg10, i)
+                writer.add_scalar('Validation/AUC', val_auc, step)
+                writer.add_scalar('Validation/MRR', val_mrr, step)
+                writer.add_scalar('Validation/nDCG@5', val_ndcg5, step)
+                writer.add_scalar('Validation/nDCG@10', val_ndcg10, step)
                 tqdm.write(
                     f"Time {time_since(start_time)}, batches {i}, validation AUC: {val_auc:.4f}, validation MRR: {val_mrr:.4f}, validation nDCG@5: {val_ndcg5:.4f}, validation nDCG@10: {val_ndcg10:.4f}, "
                 )
