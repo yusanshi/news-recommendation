@@ -82,7 +82,7 @@ tensorboard --logdir=runs/{model_name}
 
 | Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 |
 | --------- | ----- | ----- | ------ | ------- |
-| NRMS      | 64.19 | 29.89 | 32.52  | 38.89   |
+| NRMS      | 65.49 | 30.28 | 33.07  | 39.62   |
 | NAML      | 66.77 | 31.63 | 34.80  | 41.11   |
 | LSTUR     |       |       |        |         |
 | DKN       | 60.48 | 27.48 | 30.07  | 36.46   |
@@ -92,7 +92,18 @@ tensorboard --logdir=runs/{model_name}
 
 Checkpoints: <https://drive.google.com/open?id=1GbhxYd2qifRImFK4b883x7xXU-lpoJx->
 
-You can verify the results by simply extracting them and running `MODEL_NAME=XXXX python3 src/evaluate.py`.
+You can verify the results by simply downloading them and running `MODEL_NAME=XXXX python3 src/evaluate.py`.
+
+**NAML**
+
+Attention weights distribution of different news parts in news encoder.
+
+- ![](https://via.placeholder.com/15/e37/000000?text=+) abstract
+- ![](https://via.placeholder.com/15/3be/000000?text=+) title
+- ![](https://via.placeholder.com/15/07b/000000?text=+) category
+- ![](https://via.placeholder.com/15/c31/000000?text=+) subcategory
+
+![](./img/NAML/attention_weights.svg)
 
 ## Credits
 
