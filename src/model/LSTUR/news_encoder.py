@@ -28,7 +28,6 @@ class NewsEncoder(torch.nn.Module):
             padding=(int((config.window_size - 1) / 2), 0))
         self.title_attention = AdditiveAttention(config.query_vector_dim,
                                                  config.num_filters)
-        
 
     def forward(self, news):
         """

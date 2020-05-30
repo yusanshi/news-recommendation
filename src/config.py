@@ -68,9 +68,9 @@ class LSTURConfig(BaseConfig):
     # For CNN
     num_filters = 300
     window_size = 3
-    # 'ini' or 'con'. See paper for more detail
     long_short_term_method = 'ini'
-    # TODO 'con' unimplemented currently
+    # See paper for more detail
+    assert long_short_term_method in ['ini', 'con']
     masking_probability = 0.5
 
 

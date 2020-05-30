@@ -80,15 +80,15 @@ tensorboard --logdir=runs/{model_name}
 
 ## Results
 
-| Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 |
-| --------- | ----- | ----- | ------ | ------- |
-| NRMS      | 65.49 | 30.28 | 33.07  | 39.62   |
-| NAML      | 66.77 | 31.63 | 34.80  | 41.11   |
-| LSTUR     |       |       |        |         |
-| DKN       | 60.48 | 27.48 | 30.07  | 36.46   |
-| Hi-Fi Ark |       |       |        |         |
-| TANR      | 66.09 | 31.15 | 34.22  | 40.46   |
-| FIM       |       |       |        |         |
+| Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 | Remark                          |
+| --------- | ----- | ----- | ------ | ------- | ------------------------------- |
+| NRMS      | 65.49 | 30.28 | 33.07  | 39.62   | `ckpt-3200.pth`, batch size 192 |
+| NAML      | 66.63 | 31.72 | 35.00  | 41.15   | `ckpt-8000.pth`, batch size 64  |
+| LSTUR     |       |       |        |         |                                 |
+| DKN       | 62.35 | 28.09 | 30.56  | 37.16   | `ckpt-11400.pth`, batch size 64 |
+| Hi-Fi Ark |       |       |        |         |                                 |
+| TANR      | 66.55 | 31.62 | 34.96  | 41.12   | `ckpt-3800.pth`, batch size 128 |
+| FIM       |       |       |        |         |                                 |
 
 Checkpoints: <https://drive.google.com/open?id=1GbhxYd2qifRImFK4b883x7xXU-lpoJx->
 

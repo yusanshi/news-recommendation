@@ -15,13 +15,31 @@ class LSTUR(torch.nn.Module):
     """
 
     def __init__(self, config, pretrained_word_embedding, writer=None):
+        """
+        # ini
+        user embedding: num_filters * 3
+        news encoder: num_filters * 3
+        GRU:
+        input: num_filters * 3
+        hidden: num_filters * 3
+
+        # con
+        user embedding: num_filter * 1.5
+        news encoder: num_filters * 3
+        GRU:
+        input: num_fitlers * 3
+        hidden: num_filter * 1.5
+        """
         super(LSTUR, self).__init__()
         self.config = config
         self.news_encoder = NewsEncoder(config, pretrained_word_embedding)
         self.user_encoder = UserEncoder(config)
         self.click_predictor = DotProductClickPredictor()
+        assert int(config.num_filters * 1.5) == config.num_filters * 1.5
         self.user_embedding = nn.Embedding(config.num_users,
-                                           config.num_filters * 3,
+                                           config.num_filters *
+                                           3 if config.long_short_term_method == 'ini' else int(
+                                               config.num_filters * 1.5),
                                            padding_idx=0)
 
     def forward(self, user, clicked_news_length, candidate_news, clicked_news):
@@ -51,10 +69,11 @@ class LSTUR(torch.nn.Module):
         # 1 + K, batch_size, num_filters * 3
         candidate_news_vector = torch.stack(
             [self.news_encoder(x) for x in candidate_news])
-        # batch_size, num_filters * 3
-        user = F.dropout(self.user_embedding(user.to(device)),
-                         p=self.config.masking_probability,
-                         training=self.training)
+        # ini: batch_size, num_filters * 3
+        # con: batch_size, num_filters * 1.5
+        user = F.dropout2d(self.user_embedding(user.to(device)).unsqueeze(dim=0),
+                           p=self.config.masking_probability,
+                           training=self.training).squeeze(dim=0)
         # batch_size, num_clicked_news_a_user, num_filters * 3
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
@@ -79,7 +98,8 @@ class LSTUR(torch.nn.Module):
         Returns:
             (shape) batch_size, num_filters * 3
         """
-        # batch_size, num_filters * 3
+        # ini: batch_size, num_filters * 3
+        # con: batch_size, num_filters * 1.5
         user = self.user_embedding(user.to(device))
         # batch_size, num_filters * 3
         return self.user_encoder(user, clicked_news_length,

@@ -87,9 +87,17 @@ class UserDataset(Dataset):
         self.behaviors.clicked_news.fillna(' ', inplace=True)
         self.behaviors.drop_duplicates(inplace=True)
         user2int = dict(pd.read_table(user2int_path).values.tolist())
+        user_total = 0
+        user_missed = 0
         for row in self.behaviors.itertuples():
-            self.behaviors.at[row.Index, 'user'] = user2int[
-                row.user] if row.user in user2int else 0
+            user_total += 1
+            if row.user in user2int:
+                self.behaviors.at[row.Index, 'user'] = user2int[row.user]
+            else:
+                user_missed += 1
+                self.behaviors.at[row.Index, 'user'] = 0
+        if model_name == 'LSTUR':
+            print(f'User miss rate: {user_missed/user_total:.4f}')
 
     def __len__(self):
         return len(self.behaviors)
