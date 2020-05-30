@@ -93,7 +93,7 @@ class HiFiArkConfig(BaseConfig):
     num_filters = 300
     window_size = 3
     num_pooling_heads = 5
-    regularizer_loss_weight = 8.0  # TODO
+    regularizer_loss_weight = 0.1
 
 
 class TANRConfig(BaseConfig):

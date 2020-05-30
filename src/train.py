@@ -143,11 +143,15 @@ def train():
                 writer.add_scalar('Train/BaseLoss', loss.item(), step)
                 writer.add_scalar('Train/RegularizerLoss',
                                   regularizer_loss.item(), step)
+                writer.add_scalar('Train/RegularizerBaseRatio',
+                                  regularizer_loss.item() / loss.item(), step)
                 loss += Config.regularizer_loss_weight * regularizer_loss
             elif model_name == 'TANR':
                 writer.add_scalar('Train/BaseLoss', loss.item(), step)
                 writer.add_scalar('Train/TopicClassificationLoss',
                                   topic_classification_loss.item(), step)
+                writer.add_scalar('Train/TopicBaseRatio',
+                                  topic_classification_loss.item() / loss.item(), step)
                 loss += Config.topic_classification_loss_weight * topic_classification_loss
             loss_full.append(loss.item())
             optimizer.zero_grad()

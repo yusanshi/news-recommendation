@@ -84,7 +84,7 @@ tensorboard --logdir=runs/{model_name}
 | --------- | ----- | ----- | ------ | ------- | ------------------------------- |
 | NRMS      | 65.49 | 30.28 | 33.07  | 39.62   | `ckpt-3200.pth`, batch size 192 |
 | NAML      | 66.63 | 31.72 | 35.00  | 41.15   | `ckpt-8000.pth`, batch size 64  |
-| LSTUR     |       |       |        |         |                                 |
+| LSTUR     | 62.57 | 27.50 | 30.09  | 36.53   | `ckpt-4400.pth`, batch size 128 |
 | DKN       | 62.35 | 28.09 | 30.56  | 37.16   | `ckpt-11400.pth`, batch size 64 |
 | Hi-Fi Ark |       |       |        |         |                                 |
 | TANR      | 66.55 | 31.62 | 34.96  | 41.12   | `ckpt-3800.pth`, batch size 128 |
