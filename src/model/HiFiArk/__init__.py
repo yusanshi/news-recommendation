@@ -51,7 +51,7 @@ class HiFiArk(torch.nn.Module):
             self.self_attention(clicked_news_vector), clicked_news_vector)
         # batch_size, num_pooling_heads, num_filters
         user_archive_vector, regularizer_loss = self.omap(
-            self_attended_clicked_news_vector, clicked_news_vector)
+            self_attended_clicked_news_vector)
         # 1 + K, batch_size, num_filters
         user_vector = torch.stack([self.similarity_attention(x,
                                                              user_archive_vector) for x in candidate_news_vector])
@@ -84,8 +84,7 @@ class HiFiArk(torch.nn.Module):
         self_attended_clicked_news_vector = torch.add(
             self.self_attention(clicked_news_vector), clicked_news_vector)
         # batch_size, num_pooling_heads, num_filters
-        user_archive_vector, _ = self.omap(self_attended_clicked_news_vector,
-                                           clicked_news_vector)
+        user_archive_vector, _ = self.omap(self_attended_clicked_news_vector)
         return user_archive_vector
 
     def get_prediction(self, candidate_news_vector, user_archive_vector):
