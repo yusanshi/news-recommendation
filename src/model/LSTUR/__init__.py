@@ -71,6 +71,7 @@ class LSTUR(torch.nn.Module):
             [self.news_encoder(x) for x in candidate_news])
         # ini: batch_size, num_filters * 3
         # con: batch_size, num_filters * 1.5
+        #TODO what if not drop
         user = F.dropout2d(self.user_embedding(user.to(device)).unsqueeze(dim=0),
                            p=self.config.masking_probability,
                            training=self.training).squeeze(dim=0)
