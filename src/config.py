@@ -32,6 +32,7 @@ class BaseConfig():
     # Modify the following by the output of `src/dataprocess.py`
     num_words = 1 + 31313
     num_categories = 1 + 274
+    num_entities = 1 + 9226
     num_users = 1 + 50000
     word_embedding_dim = 300
     category_embedding_dim = 100
@@ -82,6 +83,8 @@ class DKNConfig(BaseConfig):
     # For CNN
     num_filters = 50
     window_sizes = [2, 3, 4]
+    # TODO: currently context is not available
+    use_context = False
 
 
 class HiFiArkConfig(BaseConfig):

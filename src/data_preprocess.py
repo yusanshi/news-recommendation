@@ -234,6 +234,10 @@ def parse_news(source, target, category2int_path, word2int_path,
                      columns=['entity', 'int']).to_csv(entity2int_path,
                                                        sep='\t',
                                                        index=False)
+        print(
+            f'Please modify `num_entities` in `src/config.py` into 1 + {len(entity2int)}'
+        )
+
     elif mode == 'test':
         category2int = dict(pd.read_table(category2int_path).values.tolist())
         # na_filter=False is needed since nan is also a valid word

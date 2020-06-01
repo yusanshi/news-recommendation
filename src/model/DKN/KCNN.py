@@ -23,8 +23,21 @@ class KCNN(torch.nn.Module):
         else:
             self.word_embedding = nn.Embedding.from_pretrained(
                 pretrained_word_embedding, freeze=False, padding_idx=0)
-        self.entity_embedding = pretrained_entity_embedding
-        self.context_embedding = pretrained_context_embedding
+        if pretrained_entity_embedding is None:
+            self.entity_embedding = nn.Embedding(config.num_entities,
+                                                 config.entity_embedding_dim,
+                                                 padding_idx=0)
+        else:
+            self.entity_embedding = nn.Embedding.from_pretrained(
+                pretrained_entity_embedding, freeze=False, padding_idx=0)
+        if config.use_context:
+            if pretrained_context_embedding is None:
+                self.context_embedding = nn.Embedding(config.num_entities,
+                                                      config.entity_embedding_dim,
+                                                      padding_idx=0)
+            else:
+                self.context_embedding = nn.Embedding.from_pretrained(
+                    pretrained_context_embedding, freeze=False, padding_idx=0)
         self.transform_matrix = nn.Parameter(
             torch.empty(self.config.entity_embedding_dim,
                         self.config.word_embedding_dim).uniform_(-0.1, 0.1))
@@ -32,7 +45,7 @@ class KCNN(torch.nn.Module):
             torch.empty(self.config.word_embedding_dim).uniform_(-0.1, 0.1))
 
         self.conv_filters = nn.ModuleDict({
-            str(x): nn.Conv2d(3 if self.context_embedding is not None else 2,
+            str(x): nn.Conv2d(3 if self.config.use_context else 2,
                               self.config.num_filters,
                               (x, self.config.word_embedding_dim))
             for x in self.config.window_sizes
@@ -56,13 +69,12 @@ class KCNN(torch.nn.Module):
         word_vector = self.word_embedding(
             torch.stack(news["title"], dim=1).to(device))
         # batch_size, num_words_title, entity_embedding_dim
-        entity_vector = F.embedding(torch.stack(news["title_entities"], dim=1),
-                                    self.entity_embedding).to(device)
-        if self.context_embedding is not None:
+        entity_vector = self.entity_embedding(
+            torch.stack(news["title_entities"], dim=1).to(device))
+        if self.config.use_context:
             # batch_size, num_words_title, entity_embedding_dim
-            context_vector = F.embedding(
-                torch.stack(news["title_entities"], dim=1),
-                self.context_embedding).to(device)
+            context_vector = self.context_embedding(
+                torch.stack(news["title_entities"], dim=1).to(device))
 
         # batch_size, num_words_title, word_embedding_dim
         transformed_entity_vector = torch.tanh(
@@ -71,7 +83,7 @@ class KCNN(torch.nn.Module):
                     entity_vector, self.transform_matrix), self.transform_bias
             ))
 
-        if self.context_embedding is not None:
+        if self.config.use_context:
             # batch_size, num_words_title, word_embedding_dim
             transformed_context_vector = torch.tanh(
                 torch.add(

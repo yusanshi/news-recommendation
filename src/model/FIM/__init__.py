@@ -9,7 +9,7 @@ class FIM(torch.nn.Module):
     Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
 
-    def __init__(self, config, pretrained_word_embedding, writer=None):
+    def __init__(self, config, pretrained_word_embedding=None, writer=None):
         super(FIM, self).__init__()
         self.news_encoder = NewsEncoder(config, pretrained_word_embedding)
         self.aggregator = Aggregator(config)

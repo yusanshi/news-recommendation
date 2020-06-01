@@ -275,27 +275,9 @@ def evaluate(model, directory, generate_json=False, json_path=None):
 if __name__ == '__main__':
     print('Using device:', device)
     print(f'Evaluating model {model_name}')
-    # Don't need to load pretrained word embedding
+    # Don't need to load pretrained word/entity/context embedding
     # since it will be loaded from checkpoint later
-    pretrained_word_embedding = None
-    if model_name == 'DKN':
-        try:
-            pretrained_entity_embedding = torch.from_numpy(
-                np.load(
-                    './data/train/pretrained_entity_embedding.npy')).float()
-        except FileNotFoundError:
-            pretrained_entity_embedding = None
-        try:
-            pretrained_context_embedding = torch.from_numpy(
-                np.load(
-                    './data/train/pretrained_context_embedding.npy')).float()
-        except FileNotFoundError:
-            pretrained_context_embedding = None
-        model = Model(Config, pretrained_word_embedding,
-                      pretrained_entity_embedding,
-                      pretrained_context_embedding).to(device)
-    else:
-        model = Model(Config, pretrained_word_embedding).to(device)
+    model = Model(Config).to(device)
     from train import latest_checkpoint  # Avoid circular imports
     checkpoint_path = latest_checkpoint(
         os.path.join('./checkpoint', model_name))

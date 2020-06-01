@@ -57,7 +57,6 @@ def train():
         except FileNotFoundError:
             pretrained_entity_embedding = None
 
-        # TODO: currently context is not available
         try:
             pretrained_context_embedding = torch.from_numpy(
                 np.load(

@@ -14,7 +14,7 @@ class LSTUR(torch.nn.Module):
     Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
 
-    def __init__(self, config, pretrained_word_embedding, writer=None):
+    def __init__(self, config, pretrained_word_embedding=None, writer=None):
         """
         # ini
         user embedding: num_filters * 3
@@ -71,7 +71,7 @@ class LSTUR(torch.nn.Module):
             [self.news_encoder(x) for x in candidate_news])
         # ini: batch_size, num_filters * 3
         # con: batch_size, num_filters * 1.5
-        #TODO what if not drop
+        # TODO what if not drop
         user = F.dropout2d(self.user_embedding(user.to(device)).unsqueeze(dim=0),
                            p=self.config.masking_probability,
                            training=self.training).squeeze(dim=0)
