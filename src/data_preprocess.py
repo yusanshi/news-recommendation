@@ -64,7 +64,7 @@ def parse_behaviors(source, target, val_target, user2int_path):
     val_behaviors['user-time'] = val_behaviors['user'] + val_behaviors['time']
     behaviors.drop(behaviors[behaviors['user-time'].isin(
         val_behaviors['user-time'])].index,
-        inplace=True)
+                   inplace=True)
     print(
         f'Drop {len(val_behaviors)} sessions from training set to be used in validation.'
     )
@@ -91,8 +91,10 @@ def parse_behaviors(source, target, val_target, user2int_path):
             pbar.update(1)
     behaviors = behaviors.explode('impressions').dropna(
         subset=["impressions"]).reset_index(drop=True)
-    behaviors[['candidate_news', 'clicked']] = pd.DataFrame(behaviors.impressions.map(lambda x: (
-        ' '.join([e.split('-')[0] for e in x]), ' '.join([e.split('-')[1] for e in x]))).tolist())
+    behaviors[['candidate_news', 'clicked']] = pd.DataFrame(
+        behaviors.impressions.map(
+            lambda x: (' '.join([e.split('-')[0] for e in x]), ' '.join(
+                [e.split('-')[1] for e in x]))).tolist())
     behaviors.to_csv(
         target,
         sep='\t',
@@ -115,12 +117,13 @@ def parse_news(source, target, category2int_path, word2int_path,
     print(f"Parse {source}")
     news = pd.read_table(source,
                          header=None,
-                         usecols=[0, 1, 2, 3, 4, 6],
+                         usecols=[0, 1, 2, 3, 4, 6, 7],
                          names=[
                              'id', 'category', 'subcategory', 'title',
-                             'abstract', 'entities'
+                             'abstract', 'title_entities', 'abstract_entities'
                          ])
-    news.entities.fillna('[]', inplace=True)
+    news.title_entities.fillna('[]', inplace=True)
+    news.abstract_entities.fillna('[]', inplace=True)
     news.fillna(' ', inplace=True)
     parsed_news = pd.DataFrame(columns=[
         'id', 'category', 'subcategory', 'title', 'abstract', 'title_entities',
@@ -150,12 +153,17 @@ def parse_news(source, target, category2int_path, word2int_path,
                     word2freq[w] = 1
                 else:
                     word2freq[w] += 1
-            for e in json.loads(row.entities):
-                # Count occurrence time within title and abstract
-                times = len(
-                    list(
-                        filter(
-                            lambda x: x < len(row.title) + len(row.abstract) + 1, e['OccurrenceOffsets']))) * e['Confidence']
+
+            for e in json.loads(row.title_entities):
+                times = len(e['OccurrenceOffsets']) * e['Confidence']
+                if times > 0:
+                    if e['WikidataId'] not in entity2freq:
+                        entity2freq[e['WikidataId']] = times
+                    else:
+                        entity2freq[e['WikidataId']] += times
+
+            for e in json.loads(row.abstract_entities):
+                times = len(e['OccurrenceOffsets']) * e['Confidence']
                 if times > 0:
                     if e['WikidataId'] not in entity2freq:
                         entity2freq[e['WikidataId']] = times
@@ -184,7 +192,12 @@ def parse_news(source, target, category2int_path, word2int_path,
 
                 # Calculate local entity map (map lower single word to entity)
                 local_entity_map = {}
-                for e in json.loads(row.entities):
+                for e in json.loads(row.title_entities):
+                    if e['Confidence'] > Config.entity_confidence_threshold and e[
+                            'WikidataId'] in entity2int:
+                        for x in ' '.join(e['SurfaceForms']).lower().split():
+                            local_entity_map[x] = entity2int[e['WikidataId']]
+                for e in json.loads(row.abstract_entities):
                     if e['Confidence'] > Config.entity_confidence_threshold and e[
                             'WikidataId'] in entity2int:
                         for x in ' '.join(e['SurfaceForms']).lower().split():
@@ -252,9 +265,8 @@ def parse_news(source, target, category2int_path, word2int_path,
                   desc="Parsing categories, words and entities") as pbar:
             for row in news.itertuples(index=False):
                 new_row = [
-                    row.id, category2int[row.category]
-                    if row.category in category2int else 0,
-                    category2int[row.subcategory]
+                    row.id, category2int[row.category] if row.category
+                    in category2int else 0, category2int[row.subcategory]
                     if row.subcategory in category2int else 0,
                     [0] * Config.num_words_title,
                     [0] * Config.num_words_abstract,
@@ -264,7 +276,12 @@ def parse_news(source, target, category2int_path, word2int_path,
 
                 # Calculate local entity map (map lower single word to entity)
                 local_entity_map = {}
-                for e in json.loads(row.entities):
+                for e in json.loads(row.title_entities):
+                    if e['Confidence'] > Config.entity_confidence_threshold and e[
+                            'WikidataId'] in entity2int:
+                        for x in ' '.join(e['SurfaceForms']).lower().split():
+                            local_entity_map[x] = entity2int[e['WikidataId']]
+                for e in json.loads(row.abstract_entities):
                     if e['Confidence'] > Config.entity_confidence_threshold and e[
                             'WikidataId'] in entity2int:
                         for x in ' '.join(e['SurfaceForms']).lower().split():
@@ -351,8 +368,8 @@ def transform_entity_embedding(source, target, entity2int_path):
         entity2int_path
     """
     entity_embedding = pd.read_table(source, header=None)
-    entity_embedding['vector'] = entity_embedding.iloc[:, 1:101].values.tolist(
-    )
+    entity_embedding['vector'] = entity_embedding.iloc[:,
+                                                       1:101].values.tolist()
     entity_embedding = entity_embedding[[0, 'vector'
                                          ]].rename(columns={0: "entity"})
 
@@ -366,31 +383,6 @@ def transform_entity_embedding(source, target, entity2int_path):
     for row in merged_df.itertuples(index=False):
         entity_embedding_transformed[row.int] = row.vector
     np.save(target, entity_embedding_transformed)
-
-
-def transform2json(source, target):
-    """
-    Transform behaviors file in tsv to json
-    """
-    behaviors = pd.read_table(
-        source,
-        header=None,
-        names=['uid', 'time', 'clicked_news', 'impression'])
-    f = open(target, "w")
-    with tqdm(total=len(behaviors), desc="Transforming tsv to json") as pbar:
-        for row in behaviors.itertuples(index=False):
-            item = {}
-            item['uid'] = row.uid[1:]
-            item['time'] = row.time
-            item['impression'] = {
-                x.split('-')[0][1:]: int(x.split('-')[1])
-                for x in row.impression.split()
-            }
-            f.write(json.dumps(item) + '\n')
-
-            pbar.update(1)
-
-    f.close()
 
 
 if __name__ == '__main__':
@@ -432,10 +424,6 @@ if __name__ == '__main__':
         path.join(train_dir, 'entity2int.tsv'))
 
     print('\nProcess data for evaluation')
-
-    print('Transform test data')
-    transform2json(path.join(test_dir, 'behaviors.tsv'),
-                   path.join(test_dir, 'truth.json'))
 
     print('Parse news')
     parse_news(path.join(test_dir, 'news.tsv'),

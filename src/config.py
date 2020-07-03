@@ -43,10 +43,7 @@ class BaseConfig():
 
 
 class NRMSConfig(BaseConfig):
-    dataset_attributes = {
-        "news": ['title'],
-        "record": []
-    }
+    dataset_attributes = {"news": ['title'], "record": []}
     # For multi-head self-attention
     num_attention_heads = 15
 
@@ -76,10 +73,7 @@ class LSTURConfig(BaseConfig):
 
 
 class DKNConfig(BaseConfig):
-    dataset_attributes = {
-        "news": ['title', 'title_entities'],
-        "record": []
-    }
+    dataset_attributes = {"news": ['title', 'title_entities'], "record": []}
     # For CNN
     num_filters = 50
     window_sizes = [2, 3, 4]
@@ -88,10 +82,7 @@ class DKNConfig(BaseConfig):
 
 
 class HiFiArkConfig(BaseConfig):
-    dataset_attributes = {
-        "news": ['title'],
-        "record": []
-    }
+    dataset_attributes = {"news": ['title'], "record": []}
     # For CNN
     num_filters = 300
     window_size = 3
@@ -100,10 +91,7 @@ class HiFiArkConfig(BaseConfig):
 
 
 class TANRConfig(BaseConfig):
-    dataset_attributes = {
-        "news": ['category', 'title'],
-        "record": []
-    }
+    dataset_attributes = {"news": ['category', 'title'], "record": []}
     # For CNN
     num_filters = 300
     window_size = 3
@@ -116,24 +104,17 @@ class FIMConfig(BaseConfig):
         "news": ['category', 'subcategory', 'title'],
         "record": []
     }
-    news_rep = {
-        "num_filters": 300,
-        "window_size": 3,
-        "dilations": [1, 2, 3]
-    }
+    news_rep = {"num_filters": 300, "window_size": 3, "dilations": [1, 2, 3]}
     cross_matching = {
-        "layers": [
-            {
-                "num_filters": 32,
-                "window_size": (3, 3, 3),
-                "stride": (1, 1, 1)
-            },
-            {
-                "num_filters": 16,
-                "window_size": (3, 3, 3),
-                "stride": (1, 1, 1)
-            }
-        ],
+        "layers": [{
+            "num_filters": 32,
+            "window_size": (3, 3, 3),
+            "stride": (1, 1, 1)
+        }, {
+            "num_filters": 16,
+            "window_size": (3, 3, 3),
+            "stride": (1, 1, 1)
+        }],
         "max_pooling": {
             "window_size": (3, 3, 3),
             "stride": (3, 3, 3)

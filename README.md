@@ -94,6 +94,8 @@ Checkpoints: <https://drive.google.com/open?id=1GbhxYd2qifRImFK4b883x7xXU-lpoJx-
 
 You can verify the results by simply downloading them and running `MODEL_NAME=XXXX python3 src/evaluate.py`.
 
+> Update: MIND-small dataset has changed and the results may differ with those in the above table.
+
 ## Credits
 
 - Dataset by **MI**crosoft **N**ews **D**ataset (MIND), see <https://msnews.github.io/>.
