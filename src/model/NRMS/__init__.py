@@ -9,7 +9,6 @@ class NRMS(torch.nn.Module):
     NRMS network.
     Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
-
     def __init__(self, config, pretrained_word_embedding=None, writer=None):
         super(NRMS, self).__init__()
         self.config = config
@@ -44,8 +43,10 @@ class NRMS(torch.nn.Module):
         # batch_size, word_embedding_dim
         user_vector = self.user_encoder(clicked_news_vector)
         # batch_size, 1 + K
-        click_probability = torch.stack([self.click_predictor(x,
-                                                              user_vector) for x in candidate_news_vector], dim=1)
+        click_probability = torch.stack([
+            self.click_predictor(x, user_vector) for x in candidate_news_vector
+        ],
+                                        dim=1)
         return click_probability
 
     def get_news_vector(self, news):

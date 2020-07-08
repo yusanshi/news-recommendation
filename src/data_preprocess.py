@@ -125,10 +125,53 @@ def parse_news(source, target, category2int_path, word2int_path,
     news.title_entities.fillna('[]', inplace=True)
     news.abstract_entities.fillna('[]', inplace=True)
     news.fillna(' ', inplace=True)
-    parsed_news = pd.DataFrame(columns=[
-        'id', 'category', 'subcategory', 'title', 'abstract', 'title_entities',
-        'abstract_entities'
-    ])
+
+    def parse_row(row):
+        new_row = [
+            row.id,
+            category2int[row.category] if row.category in category2int else 0,
+            category2int[row.subcategory]
+            if row.subcategory in category2int else 0,
+            [0] * Config.num_words_title, [0] * Config.num_words_abstract,
+            [0] * Config.num_words_title, [0] * Config.num_words_abstract
+        ]
+
+        # Calculate local entity map (map lower single word to entity)
+        local_entity_map = {}
+        for e in json.loads(row.title_entities):
+            if e['Confidence'] > Config.entity_confidence_threshold and e[
+                    'WikidataId'] in entity2int:
+                for x in ' '.join(e['SurfaceForms']).lower().split():
+                    local_entity_map[x] = entity2int[e['WikidataId']]
+        for e in json.loads(row.abstract_entities):
+            if e['Confidence'] > Config.entity_confidence_threshold and e[
+                    'WikidataId'] in entity2int:
+                for x in ' '.join(e['SurfaceForms']).lower().split():
+                    local_entity_map[x] = entity2int[e['WikidataId']]
+
+        try:
+            for i, w in enumerate(word_tokenize(row.title.lower())):
+                if w in word2int:
+                    new_row[3][i] = word2int[w]
+                    if w in local_entity_map:
+                        new_row[5][i] = local_entity_map[w]
+        except IndexError:
+            pass
+
+        try:
+            for i, w in enumerate(word_tokenize(row.abstract.lower())):
+                if w in word2int:
+                    new_row[4][i] = word2int[w]
+                    if w in local_entity_map:
+                        new_row[6][i] = local_entity_map[w]
+        except IndexError:
+            pass
+
+        return pd.Series(new_row,
+                         index=[
+                             'id', 'category', 'subcategory', 'title',
+                             'abstract', 'title_entities', 'abstract_entities'
+                         ])
 
     if mode == 'train':
         category2int = {}
@@ -178,52 +221,7 @@ def parse_news(source, target, category2int_path, word2int_path,
             if v >= Config.entity_freq_threshold:
                 entity2int[k] = len(entity2int) + 1
 
-        with tqdm(total=len(news),
-                  desc="Parsing categories, words and entities") as pbar:
-            for row in news.itertuples(index=False):
-                new_row = [
-                    row.id,
-                    category2int[row.category], category2int[row.subcategory],
-                    [0] * Config.num_words_title,
-                    [0] * Config.num_words_abstract,
-                    [0] * Config.num_words_title,
-                    [0] * Config.num_words_abstract
-                ]
-
-                # Calculate local entity map (map lower single word to entity)
-                local_entity_map = {}
-                for e in json.loads(row.title_entities):
-                    if e['Confidence'] > Config.entity_confidence_threshold and e[
-                            'WikidataId'] in entity2int:
-                        for x in ' '.join(e['SurfaceForms']).lower().split():
-                            local_entity_map[x] = entity2int[e['WikidataId']]
-                for e in json.loads(row.abstract_entities):
-                    if e['Confidence'] > Config.entity_confidence_threshold and e[
-                            'WikidataId'] in entity2int:
-                        for x in ' '.join(e['SurfaceForms']).lower().split():
-                            local_entity_map[x] = entity2int[e['WikidataId']]
-
-                try:
-                    for i, w in enumerate(word_tokenize(row.title.lower())):
-                        if w in word2int:
-                            new_row[3][i] = word2int[w]
-                            if w in local_entity_map:
-                                new_row[5][i] = local_entity_map[w]
-                except IndexError:
-                    pass
-
-                try:
-                    for i, w in enumerate(word_tokenize(row.abstract.lower())):
-                        if w in word2int:
-                            new_row[4][i] = word2int[w]
-                            if w in local_entity_map:
-                                new_row[6][i] = local_entity_map[w]
-                except IndexError:
-                    pass
-
-                parsed_news.loc[len(parsed_news)] = new_row
-
-                pbar.update(1)
+        parsed_news = news.apply(parse_row, axis=1)
 
         parsed_news.to_csv(target, sep='\t', index=False)
 
@@ -258,64 +256,8 @@ def parse_news(source, target, category2int_path, word2int_path,
             pd.read_table(word2int_path, na_filter=False).values.tolist())
         entity2int = dict(pd.read_table(entity2int_path).values.tolist())
 
-        word_total = 0
-        word_missed = 0
+        parsed_news = news.apply(parse_row, axis=1)
 
-        with tqdm(total=len(news),
-                  desc="Parsing categories, words and entities") as pbar:
-            for row in news.itertuples(index=False):
-                new_row = [
-                    row.id, category2int[row.category] if row.category
-                    in category2int else 0, category2int[row.subcategory]
-                    if row.subcategory in category2int else 0,
-                    [0] * Config.num_words_title,
-                    [0] * Config.num_words_abstract,
-                    [0] * Config.num_words_title,
-                    [0] * Config.num_words_abstract
-                ]
-
-                # Calculate local entity map (map lower single word to entity)
-                local_entity_map = {}
-                for e in json.loads(row.title_entities):
-                    if e['Confidence'] > Config.entity_confidence_threshold and e[
-                            'WikidataId'] in entity2int:
-                        for x in ' '.join(e['SurfaceForms']).lower().split():
-                            local_entity_map[x] = entity2int[e['WikidataId']]
-                for e in json.loads(row.abstract_entities):
-                    if e['Confidence'] > Config.entity_confidence_threshold and e[
-                            'WikidataId'] in entity2int:
-                        for x in ' '.join(e['SurfaceForms']).lower().split():
-                            local_entity_map[x] = entity2int[e['WikidataId']]
-
-                try:
-                    for i, w in enumerate(word_tokenize(row.title.lower())):
-                        word_total += 1
-                        if w in word2int:
-                            new_row[3][i] = word2int[w]
-                            if w in local_entity_map:
-                                new_row[5][i] = local_entity_map[w]
-                        else:
-                            word_missed += 1
-                except IndexError:
-                    pass
-
-                try:
-                    for i, w in enumerate(word_tokenize(row.abstract.lower())):
-                        word_total += 1
-                        if w in word2int:
-                            new_row[4][i] = word2int[w]
-                            if w in local_entity_map:
-                                new_row[6][i] = local_entity_map[w]
-                        else:
-                            word_missed += 1
-                except IndexError:
-                    pass
-
-                parsed_news.loc[len(parsed_news)] = new_row
-
-                pbar.update(1)
-
-        print(f'Out-of-Vocabulary rate: {word_missed/word_total:.4f}')
         parsed_news.to_csv(target, sep='\t', index=False)
 
     else:
@@ -376,13 +318,36 @@ def transform_entity_embedding(source, target, entity2int_path):
     entity2int = pd.read_table(entity2int_path)
     merged_df = pd.merge(entity_embedding, entity2int,
                          on='entity').sort_values('int')
-    # TODO in fact, some entity in entity2int cannot be found in entity_embedding
-    # see https://github.com/msnews/MIND/issues/2
     entity_embedding_transformed = np.zeros(
         (len(entity2int) + 1, Config.entity_embedding_dim))
     for row in merged_df.itertuples(index=False):
         entity_embedding_transformed[row.int] = row.vector
     np.save(target, entity_embedding_transformed)
+
+
+def transform2json(source, target):
+    """
+    Transform behaviors file in tsv to json
+    """
+    behaviors = pd.read_table(
+        source,
+        header=None,
+        names=['uid', 'time', 'clicked_news', 'impression'])
+    f = open(target, "w")
+    with tqdm(total=len(behaviors), desc="Transforming tsv to json") as pbar:
+        for row in behaviors.itertuples(index=False):
+            item = {}
+            item['uid'] = row.uid[1:]
+            item['time'] = row.time
+            item['impression'] = {
+                x.split('-')[0][1:]: int(x.split('-')[1])
+                for x in row.impression.split()
+            }
+            f.write(json.dumps(item) + '\n')
+
+            pbar.update(1)
+
+    f.close()
 
 
 if __name__ == '__main__':
@@ -424,6 +389,10 @@ if __name__ == '__main__':
         path.join(train_dir, 'entity2int.tsv'))
 
     print('\nProcess data for evaluation')
+
+    print('Transform test data')
+    transform2json(path.join(test_dir, 'behaviors.tsv'),
+                   path.join(test_dir, 'truth.json'))
 
     print('Parse news')
     parse_news(path.join(test_dir, 'news.tsv'),

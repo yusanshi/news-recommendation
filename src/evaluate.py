@@ -41,11 +41,16 @@ def mrr_score(y_true, y_score):
     return np.sum(rr_score) / np.sum(y_true)
 
 
+def value2rank(d):
+    values = list(d.values())
+    ranks = [sorted(values, reverse=True).index(x) + 1 for x in values]
+    return {k: ranks[i] for i, k in enumerate(d.keys())}
+
+
 class NewsDataset(Dataset):
     """
     Load news for evaluation.
     """
-
     def __init__(self, news_path):
         super(NewsDataset, self).__init__()
         self.news_parsed = pd.read_table(news_path,
@@ -77,7 +82,6 @@ class UserDataset(Dataset):
     """
     Load users for evaluation, duplicated rows will be dropped
     """
-
     def __init__(self, behaviors_path, user2int_path):
         super(UserDataset, self).__init__()
         self.behaviors = pd.read_table(behaviors_path,
@@ -125,13 +129,13 @@ class BehaviorsDataset(Dataset):
     """
     Load behaviors for evaluation, (user, time) pair as session
     """
-
     def __init__(self, behaviors_path):
         super(BehaviorsDataset, self).__init__()
-        self.behaviors = pd.read_table(behaviors_path,
-                                       header=None,
-                                       usecols=range(4),
-                                       names=['user', 'time', 'clicked_news', 'impressions'])
+        self.behaviors = pd.read_table(
+            behaviors_path,
+            header=None,
+            usecols=range(4),
+            names=['user', 'time', 'clicked_news', 'impressions'])
         self.behaviors.clicked_news.fillna(' ', inplace=True)
         self.behaviors.impressions = self.behaviors.impressions.str.split()
 
@@ -206,7 +210,7 @@ def evaluate(model, directory, generate_json=False, json_path=None):
                                 dim=0)
                     for news_list in minibatch["clicked_news"]
                 ],
-                    dim=0).transpose(0, 1)
+                                                  dim=0).transpose(0, 1)
                 if model_name == 'LSTUR':
                     user_vector = model.get_user_vector(
                         minibatch['user'], minibatch['clicked_news_length'],
@@ -236,18 +240,10 @@ def evaluate(model, directory, generate_json=False, json_path=None):
         for minibatch in behaviors_dataloader:
             impression = {
                 news[0].split('-')[0][1:]: model.get_prediction(
-                    news2vector[news[0].split('-')[0]], user2vector[
-                        minibatch['clicked_news_string'][0]]).item()
+                    news2vector[news[0].split('-')[0]],
+                    user2vector[minibatch['clicked_news_string'][0]]).item()
                 for news in minibatch['impressions']
             }
-
-            if generate_json:
-                session = {
-                    "uid": minibatch['user'][0][1:],
-                    "time": minibatch['time'][0],
-                    "impression": impression
-                }
-                answer_file.write(json.dumps(session) + '\n')
 
             y_pred_list = list(impression.values())
             y_list = [
@@ -263,6 +259,14 @@ def evaluate(model, directory, generate_json=False, json_path=None):
             mrrs.append(mrr)
             ndcg5s.append(ndcg5)
             ndcg10s.append(ndcg10)
+
+            if generate_json:
+                session = {
+                    "uid": minibatch['user'][0][1:],
+                    "time": minibatch['time'][0],
+                    "impression": value2rank(impression)
+                }
+                answer_file.write(json.dumps(session) + '\n')
 
             pbar.update(1)
 
@@ -288,8 +292,8 @@ if __name__ == '__main__':
     checkpoint = torch.load(checkpoint_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
-    auc, mrr, ndcg5, ndcg10 = evaluate(
-        model, './data/test', True, './data/test/answer.json')
+    auc, mrr, ndcg5, ndcg10 = evaluate(model, './data/test', True,
+                                       './data/test/prediction.json')
     print(
         f'AUC: {auc:.4f}\nMRR: {mrr:.4f}\nnDCG@5: {ndcg5:.4f}\nnDCG@10: {ndcg10:.4f}'
     )

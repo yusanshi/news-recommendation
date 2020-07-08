@@ -32,12 +32,12 @@ sudo apt install unzip
 unzip glove.840B.300d.zip -d glove
 rm glove.840B.300d.zip
 
-# Download MIND-small dataset
+# Download MIND dataset
 # By downloading the dataset, you agree to the [Microsoft Research License Terms](https://go.microsoft.com/fwlink/?LinkID=206977). For more detail about the dataset, see https://msnews.github.io/.
-wget https://mind201910small.blob.core.windows.net/release/MINDsmall_train.zip https://mind201910small.blob.core.windows.net/release/MINDsmall_dev.zip
-unzip MINDsmall_train.zip -d train
-unzip MINDsmall_dev.zip -d test
-rm MINDsmall_*.zip
+wget https://mind201910small.blob.core.windows.net/release/MINDlarge_train.zip https://mind201910small.blob.core.windows.net/release/MINDlarge_dev.zip
+unzip MINDlarge_train.zip -d train
+unzip MINDlarge_dev.zip -d test
+rm MINDlarge_*.zip
 
 # Preprocess data into appropriate format
 cd ..
@@ -80,6 +80,8 @@ tensorboard --logdir=runs/{model_name}
 
 ## Results
 
+> Update: the table is out-of-date.
+
 | Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 | Remark                          |
 | --------- | ----- | ----- | ------ | ------- | ------------------------------- |
 | NRMS      | 65.49 | 30.28 | 33.07  | 39.62   | `ckpt-3200.pth`, batch size 192 |
@@ -93,8 +95,6 @@ tensorboard --logdir=runs/{model_name}
 Checkpoints: <https://drive.google.com/open?id=1GbhxYd2qifRImFK4b883x7xXU-lpoJx->
 
 You can verify the results by simply downloading them and running `MODEL_NAME=XXXX python3 src/evaluate.py`.
-
-> Update: MIND-small dataset has changed and the results may differ with those in the above table.
 
 ## Credits
 

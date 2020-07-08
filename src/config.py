@@ -30,10 +30,10 @@ class BaseConfig():
     negative_sampling_ratio = 4  # K
     dropout_probability = 0.2
     # Modify the following by the output of `src/dataprocess.py`
-    num_words = 1 + 31313
-    num_categories = 1 + 274
-    num_entities = 1 + 9226
-    num_users = 1 + 50000
+    num_words = 1 + 44774
+    num_categories = 1 + 295
+    num_entities = 1 + 14697
+    num_users = 1 + 711222
     word_embedding_dim = 300
     category_embedding_dim = 100
     # Modify the following only if you use another dataset
