@@ -23,6 +23,33 @@ except (AttributeError, ModuleNotFoundError):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
+class EarlyStopping:
+    def __init__(self, patience=5):
+        self.patience = patience
+        self.counter = 0
+        self.best_loss = np.Inf
+
+    def __call__(self, val_loss):
+        """
+        if you use other metrics where a higher value is better, e.g. accuracy,
+        call this with its corresponding negative value
+        """
+        if val_loss < self.best_loss:
+            early_stop = False
+            get_better = True
+            self.counter = 0
+            self.best_loss = val_loss
+        else:
+            get_better = False
+            self.counter += 1
+            if self.counter >= self.patience:
+                early_stop = True
+            else:
+                early_stop = False
+
+        return early_stop, get_better
+
+
 def latest_checkpoint(directory):
     if not os.path.exists(directory):
         return None
@@ -38,7 +65,9 @@ def latest_checkpoint(directory):
 
 def train():
     writer = SummaryWriter(
-        log_dir=f"./runs/{model_name}/{datetime.datetime.now().replace(microsecond=0).isoformat()}{'-' + os.environ['REMARK'] if 'REMARK' in os.environ else ''}")
+        log_dir=
+        f"./runs/{model_name}/{datetime.datetime.now().replace(microsecond=0).isoformat()}{'-' + os.environ['REMARK'] if 'REMARK' in os.environ else ''}"
+    )
 
     if not os.path.exists('checkpoint'):
         os.makedirs('checkpoint')
@@ -90,6 +119,7 @@ def train():
     loss_full = []
     exhaustion_count = 0
     step = 0
+    early_stopping = EarlyStopping()
 
     checkpoint_dir = os.path.join('./checkpoint', model_name)
     Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
@@ -136,8 +166,8 @@ def train():
                 y_pred = model(minibatch["candidate_news"],
                                minibatch["clicked_news"])
 
-            loss = torch.stack([x[0]
-                                for x in - F.log_softmax(y_pred, dim=1)]).mean()
+            loss = torch.stack([x[0] for x in -F.log_softmax(y_pred, dim=1)
+                                ]).mean()
             if model_name == 'HiFiArk':
                 writer.add_scalar('Train/BaseLoss', loss.item(), step)
                 writer.add_scalar('Train/RegularizerLoss',
@@ -149,8 +179,9 @@ def train():
                 writer.add_scalar('Train/BaseLoss', loss.item(), step)
                 writer.add_scalar('Train/TopicClassificationLoss',
                                   topic_classification_loss.item(), step)
-                writer.add_scalar('Train/TopicBaseRatio',
-                                  topic_classification_loss.item() / loss.item(), step)
+                writer.add_scalar(
+                    'Train/TopicBaseRatio',
+                    topic_classification_loss.item() / loss.item(), step)
                 loss += Config.topic_classification_loss_weight * topic_classification_loss
             loss_full.append(loss.item())
             optimizer.zero_grad()
@@ -158,14 +189,6 @@ def train():
             optimizer.step()
 
             writer.add_scalar('Train/Loss', loss.item(), step)
-
-            if i % Config.num_batches_save_checkpoint == 0:
-                torch.save(
-                    {
-                        'model_state_dict': model.state_dict(),
-                        'optimizer_state_dict': optimizer.state_dict(),
-                        'step': step
-                    }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
 
             if i % Config.num_batches_show_loss == 0:
                 tqdm.write(
@@ -183,15 +206,19 @@ def train():
                     f"Time {time_since(start_time)}, batches {i}, validation AUC: {val_auc:.4f}, validation MRR: {val_mrr:.4f}, validation nDCG@5: {val_ndcg5:.4f}, validation nDCG@10: {val_ndcg10:.4f}, "
                 )
 
-            pbar.update(1)
+                early_stop, get_better = early_stopping(-val_auc)
+                if early_stop:
+                    tqdm.write('Early stop.')
+                    break
+                elif get_better:
+                    torch.save(
+                        {
+                            'model_state_dict': model.state_dict(),
+                            'optimizer_state_dict': optimizer.state_dict(),
+                            'step': step
+                        }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
 
-    if Config.num_batches % Config.num_batches_save_checkpoint != 0:
-        torch.save(
-            {
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'step': step
-            }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
+            pbar.update(1)
 
 
 def time_since(since):

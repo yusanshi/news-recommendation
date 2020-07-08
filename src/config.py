@@ -9,11 +9,10 @@ class BaseConfig():
     """
     General configurations appiled to all models
     """
-    num_batches = 8000  # Number of batches to train
-    num_batches_show_loss = 50  # Number of batchs to show loss
+    num_batches = 60000  # Number of batches to train
+    num_batches_show_loss = 100  # Number of batchs to show loss
     # Number of batchs to check metrics on validation dataset
-    num_batches_validate = 400
-    num_batches_save_checkpoint = 200
+    num_batches_validate = 800
     batch_size = 128
     learning_rate = 0.001
     validation_proportion = 0.1
