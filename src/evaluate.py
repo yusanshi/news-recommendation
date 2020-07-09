@@ -43,7 +43,7 @@ def mrr_score(y_true, y_score):
 
 def value2rank(d):
     values = list(d.values())
-    ranks = [sorted(values, reverse=True).index(x) + 1 for x in values]
+    ranks = [sorted(values, reverse=True).index(x) for x in values]
     return {k: ranks[i] for i, k in enumerate(d.keys())}
 
 
@@ -239,7 +239,7 @@ def evaluate(model, directory, generate_json=False, json_path=None):
               desc="Calculating probabilities") as pbar:
         for minibatch in behaviors_dataloader:
             impression = {
-                news[0].split('-')[0][1:]: model.get_prediction(
+                news[0].split('-')[0]: model.get_prediction(
                     news2vector[news[0].split('-')[0]],
                     user2vector[minibatch['clicked_news_string'][0]]).item()
                 for news in minibatch['impressions']
@@ -262,7 +262,7 @@ def evaluate(model, directory, generate_json=False, json_path=None):
 
             if generate_json:
                 session = {
-                    "uid": minibatch['user'][0][1:],
+                    "uid": minibatch['user'][0],
                     "time": minibatch['time'][0],
                     "impression": value2rank(impression)
                 }

@@ -337,10 +337,10 @@ def transform2json(source, target):
     with tqdm(total=len(behaviors), desc="Transforming tsv to json") as pbar:
         for row in behaviors.itertuples(index=False):
             item = {}
-            item['uid'] = row.uid[1:]
+            item['uid'] = row.uid
             item['time'] = row.time
             item['impression'] = {
-                x.split('-')[0][1:]: int(x.split('-')[1])
+                x.split('-')[0]: int(x.split('-')[1])
                 for x in row.impression.split()
             }
             f.write(json.dumps(item) + '\n')
