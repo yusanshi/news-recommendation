@@ -131,6 +131,7 @@ def train():
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             step = checkpoint['step']
+            early_stopping(checkpoint['early_stop_value'])
             model.train()
 
     with tqdm(total=Config.num_batches, desc="Training") as pbar:
@@ -169,26 +170,30 @@ def train():
             loss = torch.stack([x[0] for x in -F.log_softmax(y_pred, dim=1)
                                 ]).mean()
             if model_name == 'HiFiArk':
-                writer.add_scalar('Train/BaseLoss', loss.item(), step)
-                writer.add_scalar('Train/RegularizerLoss',
-                                  regularizer_loss.item(), step)
-                writer.add_scalar('Train/RegularizerBaseRatio',
-                                  regularizer_loss.item() / loss.item(), step)
+                if i % 10 == 0:
+                    writer.add_scalar('Train/BaseLoss', loss.item(), step)
+                    writer.add_scalar('Train/RegularizerLoss',
+                                      regularizer_loss.item(), step)
+                    writer.add_scalar('Train/RegularizerBaseRatio',
+                                      regularizer_loss.item() / loss.item(),
+                                      step)
                 loss += Config.regularizer_loss_weight * regularizer_loss
             elif model_name == 'TANR':
-                writer.add_scalar('Train/BaseLoss', loss.item(), step)
-                writer.add_scalar('Train/TopicClassificationLoss',
-                                  topic_classification_loss.item(), step)
-                writer.add_scalar(
-                    'Train/TopicBaseRatio',
-                    topic_classification_loss.item() / loss.item(), step)
+                if i % 10 == 0:
+                    writer.add_scalar('Train/BaseLoss', loss.item(), step)
+                    writer.add_scalar('Train/TopicClassificationLoss',
+                                      topic_classification_loss.item(), step)
+                    writer.add_scalar(
+                        'Train/TopicBaseRatio',
+                        topic_classification_loss.item() / loss.item(), step)
                 loss += Config.topic_classification_loss_weight * topic_classification_loss
             loss_full.append(loss.item())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            writer.add_scalar('Train/Loss', loss.item(), step)
+            if i % 10 == 0:
+                writer.add_scalar('Train/Loss', loss.item(), step)
 
             if i % Config.num_batches_show_loss == 0:
                 tqdm.write(
@@ -215,7 +220,8 @@ def train():
                         {
                             'model_state_dict': model.state_dict(),
                             'optimizer_state_dict': optimizer.state_dict(),
-                            'step': step
+                            'step': step,
+                            'early_stop_value': -val_auc
                         }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
 
             pbar.update(1)

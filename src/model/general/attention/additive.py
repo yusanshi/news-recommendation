@@ -8,8 +8,12 @@ class AdditiveAttention(torch.nn.Module):
     A general additive attention module.
     Originally for NAML.
     """
-
-    def __init__(self, query_vector_dim, candidate_vector_dim, writer=None, tag=None, names=None):
+    def __init__(self,
+                 query_vector_dim,
+                 candidate_vector_dim,
+                 writer=None,
+                 tag=None,
+                 names=None):
         super(AdditiveAttention, self).__init__()
         self.linear = nn.Linear(candidate_vector_dim, query_vector_dim)
         self.attention_query_vector = nn.Parameter(
@@ -32,14 +36,16 @@ class AdditiveAttention(torch.nn.Module):
         # batch_size, candidate_size
         candidate_weights = F.softmax(torch.matmul(
             temp, self.attention_query_vector),
-            dim=1)
+                                      dim=1)
         if self.writer is not None:
             assert candidate_weights.size(1) == len(self.names)
-            self.writer.add_scalars(
-                self.tag, {
-                    x: y
-                    for x, y in zip(self.names, candidate_weights.mean(dim=0))
-                }, self.local_step)
+            if self.local_step % 10 == 0:
+                self.writer.add_scalars(
+                    self.tag, {
+                        x: y
+                        for x, y in zip(self.names,
+                                        candidate_weights.mean(dim=0))
+                    }, self.local_step)
             self.local_step += 1
         # batch_size, candidate_vector_dim
         target = torch.bmm(candidate_weights.unsqueeze(dim=1),
