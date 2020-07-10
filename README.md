@@ -57,7 +57,7 @@ Run.
 # Train and save checkpoint into `checkpoint/{model_name}/` directory
 python3 src/train.py
 # Load latest checkpoint and evaluate on the test set
-# This will also generate answer file `data/test/answer.json`
+# This will also generate prediction file `data/test/prediction.txt`
 python3 src/evaluate.py
 
 # or

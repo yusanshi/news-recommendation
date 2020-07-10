@@ -18,9 +18,6 @@ class BaseConfig():
     validation_proportion = 0.1
     num_workers = 4  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
-    # Whether try to load checkpoint
-    load_checkpoint = os.environ[
-        'LOAD_CHECKPOINT'] == '1' if 'LOAD_CHECKPOINT' in os.environ else True
     num_words_title = 20
     num_words_abstract = 50
     word_freq_threshold = 3

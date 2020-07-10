@@ -123,16 +123,16 @@ def train():
 
     checkpoint_dir = os.path.join('./checkpoint', model_name)
     Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-    if Config.load_checkpoint:
-        checkpoint_path = latest_checkpoint(checkpoint_dir)
-        if checkpoint_path is not None:
-            print(f"Load saved parameters in {checkpoint_path}")
-            checkpoint = torch.load(checkpoint_path)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            step = checkpoint['step']
-            early_stopping(checkpoint['early_stop_value'])
-            model.train()
+
+    checkpoint_path = latest_checkpoint(checkpoint_dir)
+    if checkpoint_path is not None:
+        print(f"Load saved parameters in {checkpoint_path}")
+        checkpoint = torch.load(checkpoint_path)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        step = checkpoint['step']
+        early_stopping(checkpoint['early_stop_value'])
+        model.train()
 
     with tqdm(total=Config.num_batches, desc="Training") as pbar:
         for i in range(1, Config.num_batches + 1):

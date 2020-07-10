@@ -5,7 +5,6 @@ import torch
 from config import model_name
 from torch.utils.data import Dataset, DataLoader
 import os
-import json
 import pandas as pd
 from ast import literal_eval
 import importlib
@@ -86,7 +85,7 @@ class UserDataset(Dataset):
         super(UserDataset, self).__init__()
         self.behaviors = pd.read_table(behaviors_path,
                                        header=None,
-                                       usecols=[0, 2],
+                                       usecols=[1, 3],
                                        names=['user', 'clicked_news'])
         self.behaviors.clicked_news.fillna(' ', inplace=True)
         self.behaviors.drop_duplicates(inplace=True)
@@ -131,11 +130,13 @@ class BehaviorsDataset(Dataset):
     """
     def __init__(self, behaviors_path):
         super(BehaviorsDataset, self).__init__()
-        self.behaviors = pd.read_table(
-            behaviors_path,
-            header=None,
-            usecols=range(4),
-            names=['user', 'time', 'clicked_news', 'impressions'])
+        self.behaviors = pd.read_table(behaviors_path,
+                                       header=None,
+                                       usecols=range(5),
+                                       names=[
+                                           'impression_id', 'user', 'time',
+                                           'clicked_news', 'impressions'
+                                       ])
         self.behaviors.clicked_news.fillna(' ', inplace=True)
         self.behaviors.impressions = self.behaviors.impressions.str.split()
 
@@ -145,6 +146,7 @@ class BehaviorsDataset(Dataset):
     def __getitem__(self, idx):
         row = self.behaviors.iloc[idx]
         item = {
+            "impression_id": row.impression_id,
             "user": row.user,
             "time": row.time,
             "clicked_news_string": row.clicked_news,
@@ -261,13 +263,9 @@ def evaluate(model, directory, generate_json=False, json_path=None):
             ndcg10s.append(ndcg10)
 
             if generate_json:
-                session = {
-                    "uid": minibatch['user'][0],
-                    "time": minibatch['time'][0],
-                    "impression": value2rank(impression)
-                }
-                answer_file.write(json.dumps(session) + '\n')
-
+                answer_file.write(
+                    f"{minibatch['impression_id'][0]} {str(list(value2rank(impression).values()))}\n"
+                )
             pbar.update(1)
 
     if generate_json:
@@ -293,7 +291,7 @@ if __name__ == '__main__':
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     auc, mrr, ndcg5, ndcg10 = evaluate(model, './data/test', True,
-                                       './data/test/prediction.json')
+                                       './data/test/prediction.txt')
     print(
         f'AUC: {auc:.4f}\nMRR: {mrr:.4f}\nnDCG@5: {ndcg5:.4f}\nnDCG@10: {ndcg10:.4f}'
     )

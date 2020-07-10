@@ -37,8 +37,7 @@ def parse_behaviors(source, target, val_target, user2int_path):
     behaviors = pd.read_table(
         source,
         header=None,
-        usecols=range(4),
-        names=['user', 'time', 'clicked_news', 'impressions'])
+        names=['impression_id', 'user', 'time', 'clicked_news', 'impressions'])
     behaviors.clicked_news.fillna(' ', inplace=True)
     behaviors.impressions = behaviors.impressions.str.split()
 
@@ -58,12 +57,10 @@ def parse_behaviors(source, target, val_target, user2int_path):
     # Drop rows in val_behaviors
     val_behaviors = pd.read_table(val_target,
                                   header=None,
-                                  usecols=range(2),
-                                  names=['user', 'time'])
-    behaviors['user-time'] = behaviors['user'] + behaviors['time']
-    val_behaviors['user-time'] = val_behaviors['user'] + val_behaviors['time']
-    behaviors.drop(behaviors[behaviors['user-time'].isin(
-        val_behaviors['user-time'])].index,
+                                  usecols=[0],
+                                  names=['impression_id'])
+    behaviors.drop(behaviors[behaviors['impression_id'].isin(
+        val_behaviors['impression_id'])].index,
                    inplace=True)
     print(
         f'Drop {len(val_behaviors)} sessions from training set to be used in validation.'
@@ -325,25 +322,20 @@ def transform_entity_embedding(source, target, entity2int_path):
     np.save(target, entity_embedding_transformed)
 
 
-def transform2json(source, target):
+def transform2txt(source, target):
     """
-    Transform behaviors file in tsv to json
+    Transform behaviors file in tsv to txt
     """
-    behaviors = pd.read_table(
-        source,
-        header=None,
-        names=['uid', 'time', 'clicked_news', 'impression'])
+    behaviors = pd.read_table(source,
+                              header=None,
+                              usecols=[0, 4],
+                              names=['impression_id', 'impression'])
     f = open(target, "w")
-    with tqdm(total=len(behaviors), desc="Transforming tsv to json") as pbar:
+    with tqdm(total=len(behaviors), desc="Transforming tsv to txt") as pbar:
         for row in behaviors.itertuples(index=False):
-            item = {}
-            item['uid'] = row.uid
-            item['time'] = row.time
-            item['impression'] = {
-                x.split('-')[0]: int(x.split('-')[1])
-                for x in row.impression.split()
-            }
-            f.write(json.dumps(item) + '\n')
+            f.write(
+                f"{row.impression_id} {str([int(x.split('-')[1]) for x in row.impression.split()])}\n"
+            )
 
             pbar.update(1)
 
@@ -388,11 +380,11 @@ if __name__ == '__main__':
         path.join(train_dir, 'pretrained_entity_embedding.npy'),
         path.join(train_dir, 'entity2int.tsv'))
 
-    print('\nProcess data for evaluation')
+    print('\nProcess data for test')
 
     print('Transform test data')
-    transform2json(path.join(test_dir, 'behaviors.tsv'),
-                   path.join(test_dir, 'truth.json'))
+    transform2txt(path.join(test_dir, 'behaviors.tsv'),
+                  path.join(test_dir, 'truth.txt'))
 
     print('Parse news')
     parse_news(path.join(test_dir, 'news.tsv'),
