@@ -334,7 +334,7 @@ def transform2txt(source, target):
     with tqdm(total=len(behaviors), desc="Transforming tsv to txt") as pbar:
         for row in behaviors.itertuples(index=False):
             f.write(
-                f"{row.impression_id} {str([int(x.split('-')[1]) for x in row.impression.split()])}\n"
+                f"{row.impression_id} {str([int(x.split('-')[1]) for x in row.impression.split()]).replace(' ','')}\n"
             )
 
             pbar.update(1)

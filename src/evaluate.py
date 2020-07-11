@@ -43,7 +43,7 @@ def mrr_score(y_true, y_score):
 def value2rank(d):
     values = list(d.values())
     ranks = [sorted(values, reverse=True).index(x) for x in values]
-    return {k: ranks[i] for i, k in enumerate(d.keys())}
+    return {k: ranks[i] + 1 for i, k in enumerate(d.keys())}
 
 
 class NewsDataset(Dataset):
@@ -156,14 +156,14 @@ class BehaviorsDataset(Dataset):
 
 
 @torch.no_grad()
-def evaluate(model, directory, generate_json=False, json_path=None):
+def evaluate(model, directory, generate_txt=False, txt_path=None):
     """
     Evaluate model on target directory.
     Args:
         model: model to be evaluated
         directory: the directory that contains two files (behaviors.tsv, news_parsed.tsv)
-        generate_json: whether to generate json file from inference result
-        json_path: file path
+        generate_txt: whether to generate txt file from inference result
+        txt_path: file path
     Returns:
         AUC
         nMRR
@@ -235,8 +235,8 @@ def evaluate(model, directory, generate_json=False, json_path=None):
     mrrs = []
     ndcg5s = []
     ndcg10s = []
-    if generate_json:
-        answer_file = open(json_path, 'w')
+    if generate_txt:
+        answer_file = open(txt_path, 'w')
     with tqdm(total=len(behaviors_dataloader),
               desc="Calculating probabilities") as pbar:
         for minibatch in behaviors_dataloader:
@@ -262,13 +262,13 @@ def evaluate(model, directory, generate_json=False, json_path=None):
             ndcg5s.append(ndcg5)
             ndcg10s.append(ndcg10)
 
-            if generate_json:
+            if generate_txt:
                 answer_file.write(
-                    f"{minibatch['impression_id'][0]} {str(list(value2rank(impression).values()))}\n"
+                    f"{minibatch['impression_id'][0]} {str(list(value2rank(impression).values())).replace(' ','')}\n"
                 )
             pbar.update(1)
 
-    if generate_json:
+    if generate_txt:
         answer_file.close()
 
     return np.mean(aucs), np.mean(mrrs), np.mean(ndcg5s), np.mean(ndcg10s)
