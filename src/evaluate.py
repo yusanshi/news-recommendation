@@ -11,7 +11,7 @@ import importlib
 
 try:
     Model = getattr(importlib.import_module(f"model.{model_name}"), model_name)
-    Config = getattr(importlib.import_module('config'), f"{model_name}Config")
+    config = getattr(importlib.import_module('config'), f"{model_name}Config")
 except (AttributeError, ModuleNotFoundError):
     print(f"{model_name} not included!")
     exit()
@@ -113,10 +113,10 @@ class UserDataset(Dataset):
             "clicked_news_string":
             row.clicked_news,
             "clicked_news":
-            row.clicked_news.split()[:Config.num_clicked_news_a_user]
+            row.clicked_news.split()[:config.num_clicked_news_a_user]
         }
         item['clicked_news_length'] = len(item["clicked_news"])
-        repeated_times = Config.num_clicked_news_a_user - len(
+        repeated_times = config.num_clicked_news_a_user - len(
             item["clicked_news"])
         assert repeated_times >= 0
         item["clicked_news"].extend(['PADDED_NEWS'] * repeated_times)
@@ -172,9 +172,9 @@ def evaluate(model, directory, generate_txt=False, txt_path=None):
     """
     news_dataset = NewsDataset(os.path.join(directory, 'news_parsed.tsv'))
     news_dataloader = DataLoader(news_dataset,
-                                 batch_size=Config.batch_size,
+                                 batch_size=config.batch_size,
                                  shuffle=False,
-                                 num_workers=Config.num_workers,
+                                 num_workers=config.num_workers,
                                  drop_last=False)
 
     news2vector = {}
@@ -195,9 +195,9 @@ def evaluate(model, directory, generate_txt=False, txt_path=None):
     user_dataset = UserDataset(os.path.join(directory, 'behaviors.tsv'),
                                'data/train/user2int.tsv')
     user_dataloader = DataLoader(user_dataset,
-                                 batch_size=Config.batch_size,
+                                 batch_size=config.batch_size,
                                  shuffle=False,
-                                 num_workers=Config.num_workers,
+                                 num_workers=config.num_workers,
                                  drop_last=False)
 
     user2vector = {}
@@ -229,7 +229,7 @@ def evaluate(model, directory, generate_txt=False, txt_path=None):
     behaviors_dataloader = DataLoader(behaviors_dataset,
                                       batch_size=1,
                                       shuffle=False,
-                                      num_workers=Config.num_workers)
+                                      num_workers=config.num_workers)
 
     aucs = []
     mrrs = []
@@ -279,7 +279,7 @@ if __name__ == '__main__':
     print(f'Evaluating model {model_name}')
     # Don't need to load pretrained word/entity/context embedding
     # since it will be loaded from checkpoint later
-    model = Model(Config).to(device)
+    model = Model(config).to(device)
     from train import latest_checkpoint  # Avoid circular imports
     checkpoint_path = latest_checkpoint(
         os.path.join('./checkpoint', model_name))

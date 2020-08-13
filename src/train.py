@@ -15,7 +15,7 @@ import datetime
 
 try:
     Model = getattr(importlib.import_module(f"model.{model_name}"), model_name)
-    Config = getattr(importlib.import_module('config'), f"{model_name}Config")
+    config = getattr(importlib.import_module('config'), f"{model_name}Config")
 except (AttributeError, ModuleNotFoundError):
     print(f"{model_name} not included!")
     exit()
@@ -93,28 +93,28 @@ def train():
         except FileNotFoundError:
             pretrained_context_embedding = None
 
-        model = Model(Config, pretrained_word_embedding,
+        model = Model(config, pretrained_word_embedding,
                       pretrained_entity_embedding,
                       pretrained_context_embedding, writer).to(device)
     else:
-        model = Model(Config, pretrained_word_embedding, writer).to(device)
+        model = Model(config, pretrained_word_embedding, writer).to(device)
 
     print(model)
 
     dataset = BaseDataset('data/train/behaviors_parsed.tsv',
                           'data/train/news_parsed.tsv',
-                          Config.dataset_attributes)
+                          config.dataset_attributes)
 
     print(f"Load training dataset with size {len(dataset)}.")
 
     dataloader = iter(
         DataLoader(dataset,
-                   batch_size=Config.batch_size,
+                   batch_size=config.batch_size,
                    shuffle=True,
-                   num_workers=Config.num_workers,
+                   num_workers=config.num_workers,
                    drop_last=True))
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=Config.learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     start_time = time.time()
     loss_full = []
     exhaustion_count = 0
@@ -134,8 +134,8 @@ def train():
         early_stopping(checkpoint['early_stop_value'])
         model.train()
 
-    with tqdm(total=Config.num_batches, desc="Training") as pbar:
-        for i in range(1, Config.num_batches + 1):
+    with tqdm(total=config.num_batches, desc="Training") as pbar:
+        for i in range(1, config.num_batches + 1):
             try:
                 minibatch = next(dataloader)
             except StopIteration:
@@ -145,9 +145,9 @@ def train():
                 )
                 dataloader = iter(
                     DataLoader(dataset,
-                               batch_size=Config.batch_size,
+                               batch_size=config.batch_size,
                                shuffle=True,
-                               num_workers=Config.num_workers,
+                               num_workers=config.num_workers,
                                drop_last=True))
                 minibatch = next(dataloader)
 
@@ -177,7 +177,7 @@ def train():
                     writer.add_scalar('Train/RegularizerBaseRatio',
                                       regularizer_loss.item() / loss.item(),
                                       step)
-                loss += Config.regularizer_loss_weight * regularizer_loss
+                loss += config.regularizer_loss_weight * regularizer_loss
             elif model_name == 'TANR':
                 if i % 10 == 0:
                     writer.add_scalar('Train/BaseLoss', loss.item(), step)
@@ -186,7 +186,7 @@ def train():
                     writer.add_scalar(
                         'Train/TopicBaseRatio',
                         topic_classification_loss.item() / loss.item(), step)
-                loss += Config.topic_classification_loss_weight * topic_classification_loss
+                loss += config.topic_classification_loss_weight * topic_classification_loss
             loss_full.append(loss.item())
             optimizer.zero_grad()
             loss.backward()
@@ -195,12 +195,12 @@ def train():
             if i % 10 == 0:
                 writer.add_scalar('Train/Loss', loss.item(), step)
 
-            if i % Config.num_batches_show_loss == 0:
+            if i % config.num_batches_show_loss == 0:
                 tqdm.write(
                     f"Time {time_since(start_time)}, batches {i}, current loss {loss.item():.4f}, average loss: {np.mean(loss_full):.4f}"
                 )
 
-            if i % Config.num_batches_validate == 0:
+            if i % config.num_batches_validate == 0:
                 val_auc, val_mrr, val_ndcg5, val_ndcg10 = evaluate(
                     model, './data/val')
                 writer.add_scalar('Validation/AUC', val_auc, step)

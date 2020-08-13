@@ -5,7 +5,7 @@ from config import model_name
 import importlib
 
 try:
-    Config = getattr(importlib.import_module('config'), f"{model_name}Config")
+    config = getattr(importlib.import_module('config'), f"{model_name}Config")
 except AttributeError:
     print(f"{model_name} not included!")
     exit()
@@ -38,13 +38,13 @@ class BaseDataset(Dataset):
         if 'subcategory' in attributes['news']:
             self.padding['subcategory'] = 0
         if 'title' in attributes['news']:
-            self.padding['title'] = [0] * Config.num_words_title
+            self.padding['title'] = [0] * config.num_words_title
         if 'abstract' in attributes['news']:
-            self.padding['abstract'] = [0] * Config.num_words_abstract
+            self.padding['abstract'] = [0] * config.num_words_abstract
         if 'title_entities' in attributes['news']:
-            self.padding['title_entities'] = [0] * Config.num_words_title
+            self.padding['title_entities'] = [0] * config.num_words_title
         if 'abstract_entities' in attributes['news']:
-            self.padding['abstract_entities'] = [0] * Config.num_words_abstract
+            self.padding['abstract_entities'] = [0] * config.num_words_abstract
 
     def __len__(self):
         return len(self.behaviors_parsed)
@@ -60,15 +60,16 @@ class BaseDataset(Dataset):
         if 'user' in self.attributes['record']:
             item['user'] = row.user
         item["clicked"] = list(map(int, row.clicked.split()))
-        item["candidate_news"] = [news2dict(x, self.news_parsed)
-                                  for x in row.candidate_news.split()]
+        item["candidate_news"] = [
+            news2dict(x, self.news_parsed) for x in row.candidate_news.split()
+        ]
         item["clicked_news"] = [
             news2dict(x, self.news_parsed)
-            for x in row.clicked_news.split()[:Config.num_clicked_news_a_user]
+            for x in row.clicked_news.split()[:config.num_clicked_news_a_user]
         ]
         if 'clicked_news_length' in self.attributes['record']:
             item['clicked_news_length'] = len(item["clicked_news"])
-        repeated_times = Config.num_clicked_news_a_user - \
+        repeated_times = config.num_clicked_news_a_user - \
             len(item["clicked_news"])
         assert repeated_times >= 0
         item["clicked_news"].extend([self.padding] * repeated_times)

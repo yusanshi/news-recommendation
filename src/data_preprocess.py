@@ -12,7 +12,7 @@ from shutil import copyfile
 import importlib
 
 try:
-    Config = getattr(importlib.import_module('config'), f"{model_name}Config")
+    config = getattr(importlib.import_module('config'), f"{model_name}Config")
 except AttributeError:
     print(f"{model_name} not included!")
     exit()
@@ -32,7 +32,7 @@ def parse_behaviors(source, target, val_target, user2int_path):
         lines = f.readlines()
     random.shuffle(lines)
     with open(val_target, 'w') as f:
-        f.writelines(lines[:int(len(lines) * Config.validation_proportion)])
+        f.writelines(lines[:int(len(lines) * config.validation_proportion)])
 
     behaviors = pd.read_table(
         source,
@@ -79,7 +79,7 @@ def parse_behaviors(source, target, val_target, user2int_path):
             try:
                 while True:
                     pair = [next(positive)]
-                    for _ in range(Config.negative_sampling_ratio):
+                    for _ in range(config.negative_sampling_ratio):
                         pair.append(next(negative))
                     pairs.append(pair)
             except StopIteration:
@@ -129,19 +129,19 @@ def parse_news(source, target, category2int_path, word2int_path,
             category2int[row.category] if row.category in category2int else 0,
             category2int[row.subcategory]
             if row.subcategory in category2int else 0,
-            [0] * Config.num_words_title, [0] * Config.num_words_abstract,
-            [0] * Config.num_words_title, [0] * Config.num_words_abstract
+            [0] * config.num_words_title, [0] * config.num_words_abstract,
+            [0] * config.num_words_title, [0] * config.num_words_abstract
         ]
 
         # Calculate local entity map (map lower single word to entity)
         local_entity_map = {}
         for e in json.loads(row.title_entities):
-            if e['Confidence'] > Config.entity_confidence_threshold and e[
+            if e['Confidence'] > config.entity_confidence_threshold and e[
                     'WikidataId'] in entity2int:
                 for x in ' '.join(e['SurfaceForms']).lower().split():
                     local_entity_map[x] = entity2int[e['WikidataId']]
         for e in json.loads(row.abstract_entities):
-            if e['Confidence'] > Config.entity_confidence_threshold and e[
+            if e['Confidence'] > config.entity_confidence_threshold and e[
                     'WikidataId'] in entity2int:
                 for x in ' '.join(e['SurfaceForms']).lower().split():
                     local_entity_map[x] = entity2int[e['WikidataId']]
@@ -211,11 +211,11 @@ def parse_news(source, target, category2int_path, word2int_path,
                         entity2freq[e['WikidataId']] += times
 
         for k, v in word2freq.items():
-            if v >= Config.word_freq_threshold:
+            if v >= config.word_freq_threshold:
                 word2int[k] = len(word2int) + 1
 
         for k, v in entity2freq.items():
-            if v >= Config.entity_freq_threshold:
+            if v >= config.entity_freq_threshold:
                 entity2int[k] = len(entity2int) + 1
 
         parsed_news = news.apply(parse_row, axis=1)
@@ -316,7 +316,7 @@ def transform_entity_embedding(source, target, entity2int_path):
     merged_df = pd.merge(entity_embedding, entity2int,
                          on='entity').sort_values('int')
     entity_embedding_transformed = np.zeros(
-        (len(entity2int) + 1, Config.entity_embedding_dim))
+        (len(entity2int) + 1, config.entity_embedding_dim))
     for row in merged_df.itertuples(index=False):
         entity_embedding_transformed[row.int] = row.vector
     np.save(target, entity_embedding_transformed)
@@ -370,7 +370,7 @@ if __name__ == '__main__':
 
     print('Generate word embedding')
     generate_word_embedding(
-        f'./data/glove/glove.840B.{Config.word_embedding_dim}d.txt',
+        f'./data/glove/glove.840B.{config.word_embedding_dim}d.txt',
         path.join(train_dir, 'pretrained_word_embedding.npy'),
         path.join(train_dir, 'word2int.tsv'))
 
