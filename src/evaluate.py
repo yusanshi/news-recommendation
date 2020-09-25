@@ -119,7 +119,8 @@ class UserDataset(Dataset):
         repeated_times = config.num_clicked_news_a_user - len(
             item["clicked_news"])
         assert repeated_times >= 0
-        item["clicked_news"].extend(['PADDED_NEWS'] * repeated_times)
+        item["clicked_news"] = ['PADDED_NEWS'
+                                ] * repeated_times + item["clicked_news"]
 
         return item
 

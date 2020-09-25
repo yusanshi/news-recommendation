@@ -50,7 +50,7 @@ class BaseDataset(Dataset):
         return len(self.behaviors_parsed)
 
     def __getitem__(self, idx):
-        def news2dict(news, df):
+        def news2dict(news, df):  # TODO use dict to speedup
             return {key: df.loc[news][key]
                     for key in self.attributes['news']
                     } if news in df.index else self.padding
@@ -72,6 +72,7 @@ class BaseDataset(Dataset):
         repeated_times = config.num_clicked_news_a_user - \
             len(item["clicked_news"])
         assert repeated_times >= 0
-        item["clicked_news"].extend([self.padding] * repeated_times)
+        item["clicked_news"] = [self.padding
+                                ] * repeated_times + item["clicked_news"]
 
         return item
