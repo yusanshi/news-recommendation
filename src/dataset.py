@@ -26,12 +26,14 @@ class BaseDataset(Dataset):
         self.news_parsed = pd.read_table(
             news_path,
             index_col='id',
+            usecols=['id'] + attributes['news'],
             converters={
                 attribute: literal_eval
                 for attribute in set(attributes['news']) & set([
                     'title', 'abstract', 'title_entities', 'abstract_entities'
                 ])
             })
+        self.news2dict = self.news_parsed.to_dict('index')
         self.padding = {}
         if 'category' in attributes['news']:
             self.padding['category'] = 0
@@ -50,21 +52,16 @@ class BaseDataset(Dataset):
         return len(self.behaviors_parsed)
 
     def __getitem__(self, idx):
-        def news2dict(news, df):  # TODO use dict to speedup
-            return {key: df.loc[news][key]
-                    for key in self.attributes['news']
-                    } if news in df.index else self.padding
-
         item = {}
         row = self.behaviors_parsed.iloc[idx]
         if 'user' in self.attributes['record']:
             item['user'] = row.user
         item["clicked"] = list(map(int, row.clicked.split()))
         item["candidate_news"] = [
-            news2dict(x, self.news_parsed) for x in row.candidate_news.split()
+            self.news2dict[x] for x in row.candidate_news.split()
         ]
         item["clicked_news"] = [
-            news2dict(x, self.news_parsed)
+            self.news2dict[x]
             for x in row.clicked_news.split()[:config.num_clicked_news_a_user]
         ]
         if 'clicked_news_length' in self.attributes['record']:
