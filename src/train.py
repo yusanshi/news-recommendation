@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from dataset import BaseDataset
 import torch
-import torch.nn.functional as F
+import torch.nn as nn
 import time
 import numpy as np
 from config import model_name
@@ -114,6 +114,7 @@ def train():
                    num_workers=config.num_workers,
                    drop_last=True))
 
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     start_time = time.time()
     loss_full = []
@@ -167,8 +168,9 @@ def train():
                 y_pred = model(minibatch["candidate_news"],
                                minibatch["clicked_news"])
 
-            loss = torch.stack([x[0] for x in -F.log_softmax(y_pred, dim=1)
-                                ]).mean()
+            y = torch.zeros(len(y_pred)).long().to(device)
+            loss = criterion(y_pred, y)
+
             if model_name == 'HiFiArk':
                 if i % 10 == 0:
                     writer.add_scalar('Train/BaseLoss', loss.item(), step)

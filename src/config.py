@@ -9,13 +9,12 @@ class BaseConfig():
     """
     General configurations appiled to all models
     """
-    num_batches = 60000  # Number of batches to train
+    num_batches = 50000  # Number of batches to train, total: 300w = num_batches * batch_size
     num_batches_show_loss = 100  # Number of batchs to show loss
     # Number of batchs to check metrics on validation dataset
     num_batches_validate = 800
-    batch_size = 128
-    learning_rate = 0.001
-    validation_proportion = 0.1
+    batch_size = 64
+    learning_rate = 0.0001
     num_workers = 4  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
     num_words_title = 20

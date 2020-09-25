@@ -33,9 +33,10 @@ rm glove.840B.300d.zip
 
 # Download MIND dataset
 # By downloading the dataset, you agree to the [Microsoft Research License Terms](https://go.microsoft.com/fwlink/?LinkID=206977). For more detail about the dataset, see https://msnews.github.io/.
-wget https://mind201910small.blob.core.windows.net/release/MINDlarge_train.zip https://mind201910small.blob.core.windows.net/release/MINDlarge_dev.zip
+wget https://mind201910small.blob.core.windows.net/release/MINDlarge_train.zip https://mind201910small.blob.core.windows.net/release/MINDlarge_dev.zip https://mind201910small.blob.core.windows.net/release/MINDlarge_test.zip
 unzip MINDlarge_train.zip -d train
-unzip MINDlarge_dev.zip -d test
+unzip MINDlarge_dev.zip -d val
+unzip MINDlarge_test.zip -d test
 rm MINDlarge_*.zip
 
 # Preprocess data into appropriate format
@@ -79,18 +80,16 @@ tensorboard --logdir=runs/{model_name}
 
 ## Results
 
-> Update: the table is out-of-date.
+| Model     | AUC  | nMRR | nDCG@5 | nDCG@10 | Remark |
+| --------- | ---- | ---- | ------ | ------- | ------ |
+| NRMS      |      |      |        |         |        |
+| NAML      |      |      |        |         |        |
+| LSTUR     |      |      |        |         |        |
+| DKN       |      |      |        |         |        |
+| Hi-Fi Ark |      |      |        |         |        |
+| TANR      |      |      |        |         |        |
 
-| Model     | AUC   | nMRR  | nDCG@5 | nDCG@10 | Remark                          |
-| --------- | ----- | ----- | ------ | ------- | ------------------------------- |
-| NRMS      | 65.49 | 30.28 | 33.07  | 39.62   | `ckpt-3200.pth`, batch size 192 |
-| NAML      | 66.63 | 31.72 | 35.00  | 41.15   | `ckpt-8000.pth`, batch size 64  |
-| LSTUR     | 62.67 | 28.21 | 30.51  | 37.15   | `ckpt-8800.pth`, batch size 128 |
-| DKN       | 62.35 | 28.09 | 30.56  | 37.16   | `ckpt-11400.pth`, batch size 64 |
-| Hi-Fi Ark | 64.15 | 29.66 | 32.35  | 38.85   | `ckpt-5000.pth`, batch size 128 |
-| TANR      | 66.55 | 31.62 | 34.96  | 41.12   | `ckpt-3800.pth`, batch size 128 |
-
-Checkpoints: <https://drive.google.com/open?id=1GbhxYd2qifRImFK4b883x7xXU-lpoJx->
+Checkpoints: <https://drive.google.com/open?id=TODO>
 
 You can verify the results by simply downloading them and running `MODEL_NAME=XXXX python3 src/evaluate.py`.
 
