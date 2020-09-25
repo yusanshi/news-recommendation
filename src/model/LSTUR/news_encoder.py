@@ -57,8 +57,8 @@ class NewsEncoder(torch.nn.Module):
         # batch_size, num_words_title, word_embedding_dim
         title_vector = F.dropout(self.word_embedding(
             torch.stack(news['title'], dim=1).to(device)),
-            p=self.config.dropout_probability,
-            training=self.training)
+                                 p=self.config.dropout_probability,
+                                 training=self.training)
         # batch_size, num_filters, num_words_title
         convoluted_title_vector = self.title_CNN(
             title_vector.unsqueeze(dim=1)).squeeze(dim=3)
@@ -71,8 +71,7 @@ class NewsEncoder(torch.nn.Module):
             activated_title_vector.transpose(1, 2))
 
         # batch_size, num_filters * 3
-        news_vector = torch.cat([
-            category_vector, subcategory_vector, weighted_title_vector
-        ],
+        news_vector = torch.cat(
+            [category_vector, subcategory_vector, weighted_title_vector],
             dim=1)
         return news_vector

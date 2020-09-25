@@ -9,11 +9,11 @@ class NAML(torch.nn.Module):
     NAML network.
     Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
-
     def __init__(self, config, pretrained_word_embedding=None, writer=None):
         super(NAML, self).__init__()
         self.config = config
-        self.news_encoder = NewsEncoder(config, pretrained_word_embedding, writer)
+        self.news_encoder = NewsEncoder(config, pretrained_word_embedding,
+                                        writer)
         self.user_encoder = UserEncoder(config)
         self.click_predictor = DotProductClickPredictor()
 
@@ -41,17 +41,17 @@ class NAML(torch.nn.Module):
         Returns:
             click_probability: batch_size
         """
-        # 1 + K, batch_size, num_filters
+        # batch_size, 1 + K, num_filters
         candidate_news_vector = torch.stack(
-            [self.news_encoder(x) for x in candidate_news])
+            [self.news_encoder(x) for x in candidate_news], dim=1)
         # batch_size, num_clicked_news_a_user, num_filters
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
         # batch_size, num_filters
         user_vector = self.user_encoder(clicked_news_vector)
         # batch_size, 1 + K
-        click_probability = torch.stack([self.click_predictor(x,
-                                                              user_vector) for x in candidate_news_vector], dim=1)
+        click_probability = self.click_predictor(candidate_news_vector,
+                                                 user_vector)
         return click_probability
 
     def get_news_vector(self, news):
@@ -89,7 +89,4 @@ class NAML(torch.nn.Module):
             click_probability: 0-dim tensor
         """
         # 0-dim tensor
-        click_probability = self.click_predictor(
-            news_vector.unsqueeze(dim=0),
-            user_vector.unsqueeze(dim=0)).squeeze(dim=0)
-        return click_probability
+        return torch.dot(news_vector, user_vector)

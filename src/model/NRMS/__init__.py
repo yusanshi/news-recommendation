@@ -34,19 +34,17 @@ class NRMS(torch.nn.Module):
         Returns:
           click_probability: batch_size, 1 + K
         """
-        # 1 + K, batch_size, word_embedding_dim
+        # batch_size, 1 + K, word_embedding_dim
         candidate_news_vector = torch.stack(
-            [self.news_encoder(x) for x in candidate_news])
+            [self.news_encoder(x) for x in candidate_news], dim=1)
         # batch_size, num_clicked_news_a_user, word_embedding_dim
         clicked_news_vector = torch.stack(
             [self.news_encoder(x) for x in clicked_news], dim=1)
         # batch_size, word_embedding_dim
         user_vector = self.user_encoder(clicked_news_vector)
         # batch_size, 1 + K
-        click_probability = torch.stack([
-            self.click_predictor(x, user_vector) for x in candidate_news_vector
-        ],
-                                        dim=1)
+        click_probability = self.click_predictor(candidate_news_vector,
+                                                 user_vector)
         return click_probability
 
     def get_news_vector(self, news):
@@ -81,7 +79,4 @@ class NRMS(torch.nn.Module):
             click_probability: 0-dim tensor
         """
         # 0-dim tensor
-        click_probability = self.click_predictor(
-            news_vector.unsqueeze(dim=0),
-            user_vector.unsqueeze(dim=0)).squeeze(dim=0)
-        return click_probability
+        return torch.dot(news_vector, user_vector)

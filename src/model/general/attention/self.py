@@ -7,7 +7,6 @@ class SelfAttention(torch.nn.Module):
     A general self attention module.
     Originally for Hi-Fi Ark.
     """
-
     def __init__(self):
         super(SelfAttention, self).__init__()
 

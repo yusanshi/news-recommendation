@@ -135,98 +135,93 @@ def train():
         early_stopping(checkpoint['early_stop_value'])
         model.train()
 
-    with tqdm(total=config.num_batches, desc="Training") as pbar:
-        for i in range(1, config.num_batches + 1):
-            try:
-                minibatch = next(dataloader)
-            except StopIteration:
-                exhaustion_count += 1
-                tqdm.write(
-                    f"Training data exhausted for {exhaustion_count} times after {i} batches, reuse the dataset."
-                )
-                dataloader = iter(
-                    DataLoader(dataset,
-                               batch_size=config.batch_size,
-                               shuffle=True,
-                               num_workers=config.num_workers,
-                               drop_last=True))
-                minibatch = next(dataloader)
+    for i in tqdm(range(1, config.num_batches + 1), desc="Training"):
+        try:
+            minibatch = next(dataloader)
+        except StopIteration:
+            exhaustion_count += 1
+            tqdm.write(
+                f"Training data exhausted for {exhaustion_count} times after {i} batches, reuse the dataset."
+            )
+            dataloader = iter(
+                DataLoader(dataset,
+                           batch_size=config.batch_size,
+                           shuffle=True,
+                           num_workers=config.num_workers,
+                           drop_last=True))
+            minibatch = next(dataloader)
 
-            step += 1
-            if model_name == 'LSTUR':
-                y_pred = model(minibatch["user"],
-                               minibatch["clicked_news_length"],
-                               minibatch["candidate_news"],
-                               minibatch["clicked_news"])
-            elif model_name == 'HiFiArk':
-                y_pred, regularizer_loss = model(minibatch["candidate_news"],
-                                                 minibatch["clicked_news"])
-            elif model_name == 'TANR':
-                y_pred, topic_classification_loss = model(
-                    minibatch["candidate_news"], minibatch["clicked_news"])
-            else:
-                y_pred = model(minibatch["candidate_news"],
-                               minibatch["clicked_news"])
+        step += 1
+        if model_name == 'LSTUR':
+            y_pred = model(minibatch["user"], minibatch["clicked_news_length"],
+                           minibatch["candidate_news"],
+                           minibatch["clicked_news"])
+        elif model_name == 'HiFiArk':
+            y_pred, regularizer_loss = model(minibatch["candidate_news"],
+                                             minibatch["clicked_news"])
+        elif model_name == 'TANR':
+            y_pred, topic_classification_loss = model(
+                minibatch["candidate_news"], minibatch["clicked_news"])
+        else:
+            y_pred = model(minibatch["candidate_news"],
+                           minibatch["clicked_news"])
 
-            y = torch.zeros(len(y_pred)).long().to(device)
-            loss = criterion(y_pred, y)
+        y = torch.zeros(len(y_pred)).long().to(device)
+        loss = criterion(y_pred, y)
 
-            if model_name == 'HiFiArk':
-                if i % 10 == 0:
-                    writer.add_scalar('Train/BaseLoss', loss.item(), step)
-                    writer.add_scalar('Train/RegularizerLoss',
-                                      regularizer_loss.item(), step)
-                    writer.add_scalar('Train/RegularizerBaseRatio',
-                                      regularizer_loss.item() / loss.item(),
-                                      step)
-                loss += config.regularizer_loss_weight * regularizer_loss
-            elif model_name == 'TANR':
-                if i % 10 == 0:
-                    writer.add_scalar('Train/BaseLoss', loss.item(), step)
-                    writer.add_scalar('Train/TopicClassificationLoss',
-                                      topic_classification_loss.item(), step)
-                    writer.add_scalar(
-                        'Train/TopicBaseRatio',
-                        topic_classification_loss.item() / loss.item(), step)
-                loss += config.topic_classification_loss_weight * topic_classification_loss
-            loss_full.append(loss.item())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
+        if model_name == 'HiFiArk':
             if i % 10 == 0:
-                writer.add_scalar('Train/Loss', loss.item(), step)
+                writer.add_scalar('Train/BaseLoss', loss.item(), step)
+                writer.add_scalar('Train/RegularizerLoss',
+                                  regularizer_loss.item(), step)
+                writer.add_scalar('Train/RegularizerBaseRatio',
+                                  regularizer_loss.item() / loss.item(), step)
+            loss += config.regularizer_loss_weight * regularizer_loss
+        elif model_name == 'TANR':
+            if i % 10 == 0:
+                writer.add_scalar('Train/BaseLoss', loss.item(), step)
+                writer.add_scalar('Train/TopicClassificationLoss',
+                                  topic_classification_loss.item(), step)
+                writer.add_scalar(
+                    'Train/TopicBaseRatio',
+                    topic_classification_loss.item() / loss.item(), step)
+            loss += config.topic_classification_loss_weight * topic_classification_loss
+        loss_full.append(loss.item())
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-            if i % config.num_batches_show_loss == 0:
-                tqdm.write(
-                    f"Time {time_since(start_time)}, batches {i}, current loss {loss.item():.4f}, average loss: {np.mean(loss_full):.4f}"
-                )
+        if i % 10 == 0:
+            writer.add_scalar('Train/Loss', loss.item(), step)
 
-            if i % config.num_batches_validate == 0:
-                val_auc, val_mrr, val_ndcg5, val_ndcg10 = evaluate(
-                    model, './data/val')
-                writer.add_scalar('Validation/AUC', val_auc, step)
-                writer.add_scalar('Validation/MRR', val_mrr, step)
-                writer.add_scalar('Validation/nDCG@5', val_ndcg5, step)
-                writer.add_scalar('Validation/nDCG@10', val_ndcg10, step)
-                tqdm.write(
-                    f"Time {time_since(start_time)}, batches {i}, validation AUC: {val_auc:.4f}, validation MRR: {val_mrr:.4f}, validation nDCG@5: {val_ndcg5:.4f}, validation nDCG@10: {val_ndcg10:.4f}, "
-                )
+        if i % config.num_batches_show_loss == 0:
+            tqdm.write(
+                f"Time {time_since(start_time)}, batches {i}, current loss {loss.item():.4f}, average loss: {np.mean(loss_full):.4f}, latest average loss: {np.mean(loss_full[-256:]):.4f}"
+            )
 
-                early_stop, get_better = early_stopping(-val_auc)
-                if early_stop:
-                    tqdm.write('Early stop.')
-                    break
-                elif get_better:
-                    torch.save(
-                        {
-                            'model_state_dict': model.state_dict(),
-                            'optimizer_state_dict': optimizer.state_dict(),
-                            'step': step,
-                            'early_stop_value': -val_auc
-                        }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
+        if i % config.num_batches_validate == 0:
+            val_auc, val_mrr, val_ndcg5, val_ndcg10 = evaluate(
+                model, './data/val')
+            writer.add_scalar('Validation/AUC', val_auc, step)
+            writer.add_scalar('Validation/MRR', val_mrr, step)
+            writer.add_scalar('Validation/nDCG@5', val_ndcg5, step)
+            writer.add_scalar('Validation/nDCG@10', val_ndcg10, step)
+            tqdm.write(
+                f"Time {time_since(start_time)}, batches {i}, validation AUC: {val_auc:.4f}, validation MRR: {val_mrr:.4f}, validation nDCG@5: {val_ndcg5:.4f}, validation nDCG@10: {val_ndcg10:.4f}, "
+            )
 
-            pbar.update(1)
+            early_stop, get_better = early_stopping(-val_auc)
+            if early_stop:
+                tqdm.write('Early stop.')
+                break
+            elif get_better:
+                torch.save(
+                    {
+                        'model_state_dict': model.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'step': step,
+                        'early_stop_value': -val_auc
+                    }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
 
 
 def time_since(since):

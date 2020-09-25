@@ -11,7 +11,6 @@ class KCNN(torch.nn.Module):
     Knowledge-aware CNN (KCNN) based on Kim CNN.
     Input a news sentence (e.g. its title), produce its embedding vector.
     """
-
     def __init__(self, config, pretrained_word_embedding,
                  pretrained_entity_embedding, pretrained_context_embedding):
         super(KCNN, self).__init__()
@@ -32,9 +31,10 @@ class KCNN(torch.nn.Module):
                 pretrained_entity_embedding, freeze=False, padding_idx=0)
         if config.use_context:
             if pretrained_context_embedding is None:
-                self.context_embedding = nn.Embedding(config.num_entities,
-                                                      config.entity_embedding_dim,
-                                                      padding_idx=0)
+                self.context_embedding = nn.Embedding(
+                    config.num_entities,
+                    config.entity_embedding_dim,
+                    padding_idx=0)
             else:
                 self.context_embedding = nn.Embedding.from_pretrained(
                     pretrained_context_embedding, freeze=False, padding_idx=0)
@@ -78,25 +78,21 @@ class KCNN(torch.nn.Module):
 
         # batch_size, num_words_title, word_embedding_dim
         transformed_entity_vector = torch.tanh(
-            torch.add(
-                torch.matmul(
-                    entity_vector, self.transform_matrix), self.transform_bias
-            ))
+            torch.add(torch.matmul(entity_vector, self.transform_matrix),
+                      self.transform_bias))
 
         if self.config.use_context:
             # batch_size, num_words_title, word_embedding_dim
             transformed_context_vector = torch.tanh(
-                torch.add(
-                    torch.matmul(
-                        context_vector, self.transform_matrix), self.transform_bias
-                ))
+                torch.add(torch.matmul(context_vector, self.transform_matrix),
+                          self.transform_bias))
 
             # batch_size, 3, num_words_title, word_embedding_dim
             multi_channel_vector = torch.stack([
                 word_vector, transformed_entity_vector,
                 transformed_context_vector
             ],
-                dim=1)
+                                               dim=1)
         else:
             # batch_size, 2, num_words_title, word_embedding_dim
             multi_channel_vector = torch.stack(

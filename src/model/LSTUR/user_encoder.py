@@ -8,8 +8,10 @@ class UserEncoder(torch.nn.Module):
         super(UserEncoder, self).__init__()
         self.config = config
         assert int(config.num_filters * 1.5) == config.num_filters * 1.5
-        self.gru = nn.GRU(config.num_filters * 3, config.num_filters *
-                          3 if config.long_short_term_method == 'ini' else int(config.num_filters * 1.5))
+        self.gru = nn.GRU(
+            config.num_filters * 3,
+            config.num_filters * 3 if config.long_short_term_method == 'ini'
+            else int(config.num_filters * 1.5))
 
     def forward(self, user, clicked_news_length, clicked_news_vector):
         """
