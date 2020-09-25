@@ -1,5 +1,6 @@
 from config import model_name
 import pandas as pd
+import swifter
 import json
 from tqdm import tqdm
 from os import path
@@ -7,7 +8,6 @@ import random
 from nltk.tokenize import word_tokenize
 import numpy as np
 import csv
-from pathlib import Path
 from shutil import copyfile
 import importlib
 
@@ -18,21 +18,15 @@ except AttributeError:
     exit()
 
 
-def parse_behaviors(source, target, val_target, user2int_path):
+def parse_behaviors(source, target, user2int_path):
     """
     Parse behaviors file in training set.
     Args:
         source: source behaviors file
         target: target behaviors file
-        val_target: target behaviors file used for validation split from training set
         user2int_path: path for saving user2int file
     """
     print(f"Parse {source}")
-    with open(source, 'r') as f:
-        lines = f.readlines()
-    random.shuffle(lines)
-    with open(val_target, 'w') as f:
-        f.writelines(lines[:int(len(lines) * config.validation_proportion)])
 
     behaviors = pd.read_table(
         source,
@@ -54,38 +48,25 @@ def parse_behaviors(source, target, val_target, user2int_path):
         f'Please modify `num_users` in `src/config.py` into 1 + {len(user2int)}'
     )
 
-    # Drop rows in val_behaviors
-    val_behaviors = pd.read_table(val_target,
-                                  header=None,
-                                  usecols=[0],
-                                  names=['impression_id'])
-    behaviors.drop(behaviors[behaviors['impression_id'].isin(
-        val_behaviors['impression_id'])].index,
-                   inplace=True)
-    print(
-        f'Drop {len(val_behaviors)} sessions from training set to be used in validation.'
-    )
-
     for row in behaviors.itertuples():
         behaviors.at[row.Index, 'user'] = user2int[row.user]
 
-    with tqdm(total=len(behaviors), desc="Balancing data") as pbar:
-        for row in behaviors.itertuples():
-            positive = iter([x for x in row.impressions if x.endswith('1')])
-            negative = [x for x in row.impressions if x.endswith('0')]
-            random.shuffle(negative)
-            negative = iter(negative)
-            pairs = []
-            try:
-                while True:
-                    pair = [next(positive)]
-                    for _ in range(config.negative_sampling_ratio):
-                        pair.append(next(negative))
-                    pairs.append(pair)
-            except StopIteration:
-                pass
-            behaviors.at[row.Index, 'impressions'] = pairs
-            pbar.update(1)
+    for row in tqdm(behaviors.itertuples(), desc="Balancing data"):
+        positive = iter([x for x in row.impressions if x.endswith('1')])
+        negative = [x for x in row.impressions if x.endswith('0')]
+        random.shuffle(negative)
+        negative = iter(negative)
+        pairs = []
+        try:
+            while True:
+                pair = [next(positive)]
+                for _ in range(config.negative_sampling_ratio):
+                    pair.append(next(negative))
+                pairs.append(pair)
+        except StopIteration:
+            pass
+        behaviors.at[row.Index, 'impressions'] = pairs
+
     behaviors = behaviors.explode('impressions').dropna(
         subset=["impressions"]).reset_index(drop=True)
     behaviors[['candidate_news', 'clicked']] = pd.DataFrame(
@@ -218,7 +199,7 @@ def parse_news(source, target, category2int_path, word2int_path,
             if v >= config.entity_freq_threshold:
                 entity2int[k] = len(entity2int) + 1
 
-        parsed_news = news.apply(parse_row, axis=1)
+        parsed_news = news.swifter.apply(parse_row, axis=1)
 
         parsed_news.to_csv(target, sep='\t', index=False)
 
@@ -253,7 +234,7 @@ def parse_news(source, target, category2int_path, word2int_path,
             pd.read_table(word2int_path, na_filter=False).values.tolist())
         entity2int = dict(pd.read_table(entity2int_path).values.tolist())
 
-        parsed_news = news.apply(parse_row, axis=1)
+        parsed_news = news.swifter.apply(parse_row, axis=1)
 
         parsed_news.to_csv(target, sep='\t', index=False)
 
@@ -319,45 +300,23 @@ def transform_entity_embedding(source, target, entity2int_path):
     entity2int = pd.read_table(entity2int_path)
     merged_df = pd.merge(entity_embedding, entity2int,
                          on='entity').sort_values('int')
-    entity_embedding_transformed = np.zeros(
+    entity_embedding_transformed = np.random.normal(
         (len(entity2int) + 1, config.entity_embedding_dim))
     for row in merged_df.itertuples(index=False):
         entity_embedding_transformed[row.int] = row.vector
     np.save(target, entity_embedding_transformed)
 
 
-def transform2txt(source, target):
-    """
-    Transform behaviors file in tsv to txt
-    """
-    behaviors = pd.read_table(source,
-                              header=None,
-                              usecols=[0, 4],
-                              names=['impression_id', 'impression'])
-    f = open(target, "w")
-    with tqdm(total=len(behaviors), desc="Transforming tsv to txt") as pbar:
-        for row in behaviors.itertuples(index=False):
-            f.write(
-                f"{row.impression_id} {str([int(x.split('-')[1]) for x in row.impression.split()]).replace(' ','')}\n"
-            )
-
-            pbar.update(1)
-
-    f.close()
-
-
 if __name__ == '__main__':
     train_dir = './data/train'
     val_dir = './data/val'
     test_dir = './data/test'
-    Path(val_dir).mkdir(exist_ok=True)
 
     print('Process data for training')
 
     print('Parse behaviors')
     parse_behaviors(path.join(train_dir, 'behaviors.tsv'),
                     path.join(train_dir, 'behaviors_parsed.tsv'),
-                    path.join(val_dir, 'behaviors.tsv'),
                     path.join(train_dir, 'user2int.tsv'))
 
     print('Parse news')
@@ -367,10 +326,6 @@ if __name__ == '__main__':
                path.join(train_dir, 'word2int.tsv'),
                path.join(train_dir, 'entity2int.tsv'),
                mode='train')
-
-    # For validation in training
-    copyfile(path.join(train_dir, 'news_parsed.tsv'),
-             path.join(val_dir, 'news_parsed.tsv'))
 
     print('Generate word embedding')
     generate_word_embedding(
@@ -384,11 +339,17 @@ if __name__ == '__main__':
         path.join(train_dir, 'pretrained_entity_embedding.npy'),
         path.join(train_dir, 'entity2int.tsv'))
 
-    print('\nProcess data for test')
+    print('\nProcess data for validation')
 
-    print('Transform test data')
-    transform2txt(path.join(test_dir, 'behaviors.tsv'),
-                  path.join(test_dir, 'truth.txt'))
+    print('Parse news')
+    parse_news(path.join(val_dir, 'news.tsv'),
+               path.join(val_dir, 'news_parsed.tsv'),
+               path.join(train_dir, 'category2int.tsv'),
+               path.join(train_dir, 'word2int.tsv'),
+               path.join(train_dir, 'entity2int.tsv'),
+               mode='test')
+
+    print('\nProcess data for test')
 
     print('Parse news')
     parse_news(path.join(test_dir, 'news.tsv'),

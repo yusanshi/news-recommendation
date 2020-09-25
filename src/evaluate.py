@@ -156,14 +156,12 @@ class BehaviorsDataset(Dataset):
 
 
 @torch.no_grad()
-def evaluate(model, directory, generate_txt=False, txt_path=None):
+def evaluate(model, directory):
     """
     Evaluate model on target directory.
     Args:
         model: model to be evaluated
         directory: the directory that contains two files (behaviors.tsv, news_parsed.tsv)
-        generate_txt: whether to generate txt file from inference result
-        txt_path: file path
     Returns:
         AUC
         nMRR
@@ -229,8 +227,6 @@ def evaluate(model, directory, generate_txt=False, txt_path=None):
     mrrs = []
     ndcg5s = []
     ndcg10s = []
-    if generate_txt:
-        answer_file = open(txt_path, 'w')
     try:
         for minibatch in tqdm(behaviors_dataloader,
                               desc="Calculating probabilities"):
@@ -256,15 +252,8 @@ def evaluate(model, directory, generate_txt=False, txt_path=None):
             ndcg5s.append(ndcg5)
             ndcg10s.append(ndcg10)
 
-            if generate_txt:
-                answer_file.write(
-                    f"{minibatch['impression_id'][0]} {str(list(value2rank(impression).values())).replace(' ','')}\n"
-                )
     except KeyboardInterrupt:
         pass
-
-    if generate_txt:
-        answer_file.close()
 
     return np.mean(aucs), np.mean(mrrs), np.mean(ndcg5s), np.mean(ndcg10s)
 
@@ -285,8 +274,7 @@ if __name__ == '__main__':
     checkpoint = torch.load(checkpoint_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
-    auc, mrr, ndcg5, ndcg10 = evaluate(model, './data/test', True,
-                                       './data/test/prediction.txt')
+    auc, mrr, ndcg5, ndcg10 = evaluate(model, './data/test')
     print(
         f'AUC: {auc:.4f}\nMRR: {mrr:.4f}\nnDCG@5: {ndcg5:.4f}\nnDCG@10: {ndcg10:.4f}'
     )

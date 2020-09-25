@@ -5,3 +5,4 @@ tensorboard
 tqdm
 nltk
 scikit-learn
+swifter
