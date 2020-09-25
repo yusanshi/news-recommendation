@@ -178,16 +178,14 @@ def evaluate(model, directory, generate_txt=False, txt_path=None):
                                  drop_last=False)
 
     news2vector = {}
-    with tqdm(total=len(news_dataloader),
-              desc="Calculating vectors for news") as pbar:
-        for minibatch in news_dataloader:
-            news_ids = minibatch["id"]
-            if any(id not in news2vector for id in news_ids):
-                news_vector = model.get_news_vector(minibatch)
-                for id, vector in zip(news_ids, news_vector):
-                    if id not in news2vector:
-                        news2vector[id] = vector
-            pbar.update(1)
+    for minibatch in tqdm(news_dataloader,
+                          desc="Calculating vectors for news"):
+        news_ids = minibatch["id"]
+        if any(id not in news2vector for id in news_ids):
+            news_vector = model.get_news_vector(minibatch)
+            for id, vector in zip(news_ids, news_vector):
+                if id not in news2vector:
+                    news2vector[id] = vector
 
     news2vector['PADDED_NEWS'] = torch.zeros(
         list(news2vector.values())[0].size())
@@ -201,28 +199,24 @@ def evaluate(model, directory, generate_txt=False, txt_path=None):
                                  drop_last=False)
 
     user2vector = {}
-    with tqdm(total=len(user_dataloader),
-              desc="Calculating vectors for users") as pbar:
-        for minibatch in user_dataloader:
-            user_strings = minibatch["clicked_news_string"]
-            if any(user_string not in user2vector
-                   for user_string in user_strings):
-                clicked_news_vector = torch.stack([
-                    torch.stack([news2vector[x].to(device) for x in news_list],
-                                dim=0)
-                    for news_list in minibatch["clicked_news"]
-                ],
-                                                  dim=0).transpose(0, 1)
-                if model_name == 'LSTUR':
-                    user_vector = model.get_user_vector(
-                        minibatch['user'], minibatch['clicked_news_length'],
-                        clicked_news_vector)
-                else:
-                    user_vector = model.get_user_vector(clicked_news_vector)
-                for user, vector in zip(user_strings, user_vector):
-                    if user not in user2vector:
-                        user2vector[user] = vector
-            pbar.update(1)
+    for minibatch in tqdm(user_dataloader,
+                          desc="Calculating vectors for users"):
+        user_strings = minibatch["clicked_news_string"]
+        if any(user_string not in user2vector for user_string in user_strings):
+            clicked_news_vector = torch.stack([
+                torch.stack([news2vector[x].to(device) for x in news_list],
+                            dim=0) for news_list in minibatch["clicked_news"]
+            ],
+                                              dim=0).transpose(0, 1)
+            if model_name == 'LSTUR':
+                user_vector = model.get_user_vector(
+                    minibatch['user'], minibatch['clicked_news_length'],
+                    clicked_news_vector)
+            else:
+                user_vector = model.get_user_vector(clicked_news_vector)
+            for user, vector in zip(user_strings, user_vector):
+                if user not in user2vector:
+                    user2vector[user] = vector
 
     behaviors_dataset = BehaviorsDataset(
         os.path.join(directory, 'behaviors.tsv'))
@@ -237,9 +231,9 @@ def evaluate(model, directory, generate_txt=False, txt_path=None):
     ndcg10s = []
     if generate_txt:
         answer_file = open(txt_path, 'w')
-    with tqdm(total=len(behaviors_dataloader),
-              desc="Calculating probabilities") as pbar:
-        for minibatch in behaviors_dataloader:
+    try:
+        for minibatch in tqdm(behaviors_dataloader,
+                              desc="Calculating probabilities"):
             impression = {
                 news[0].split('-')[0]: model.get_prediction(
                     news2vector[news[0].split('-')[0]],
@@ -266,7 +260,8 @@ def evaluate(model, directory, generate_txt=False, txt_path=None):
                 answer_file.write(
                     f"{minibatch['impression_id'][0]} {str(list(value2rank(impression).values())).replace(' ','')}\n"
                 )
-            pbar.update(1)
+    except KeyboardInterrupt:
+        pass
 
     if generate_txt:
         answer_file.close()
