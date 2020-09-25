@@ -10,7 +10,6 @@ The repository currently includes the following models.
 | DKN       | Deep Knowledge-Aware Network for News Recommendation                      | https://dl.acm.org/doi/abs/10.1145/3178876.3186175 |
 | Hi-Fi Ark | Deep User Representation via High-Fidelity Archive Network                | https://www.ijcai.org/Proceedings/2019/424         |
 | TANR      | Neural News Recommendation with Topic-Aware News Representation           | https://www.aclweb.org/anthology/P19-1110.pdf      |
-| FIM       | Fine-grained Interest Matching for Neural News Recommendation             |                                                    |
 
 ## Get started
 
@@ -90,7 +89,6 @@ tensorboard --logdir=runs/{model_name}
 | DKN       | 62.35 | 28.09 | 30.56  | 37.16   | `ckpt-11400.pth`, batch size 64 |
 | Hi-Fi Ark | 64.15 | 29.66 | 32.35  | 38.85   | `ckpt-5000.pth`, batch size 128 |
 | TANR      | 66.55 | 31.62 | 34.96  | 41.12   | `ckpt-3800.pth`, batch size 128 |
-| FIM       |       |       |        |         |                                 |
 
 Checkpoints: <https://drive.google.com/open?id=1GbhxYd2qifRImFK4b883x7xXU-lpoJx->
 
