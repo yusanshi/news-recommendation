@@ -136,7 +136,10 @@ def train():
         early_stopping(checkpoint['early_stop_value'])
         model.train()
 
-    for i in tqdm(range(1, config.num_batches + 1), desc="Training"):
+    for i in tqdm(range(
+            1,
+            config.num_epochs * len(dataset) // config.batch_size + 1),
+                  desc="Training"):
         try:
             minibatch = next(dataloader)
         except StopIteration:

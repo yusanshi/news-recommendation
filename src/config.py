@@ -2,14 +2,16 @@ import os
 
 model_name = os.environ['MODEL_NAME'] if 'MODEL_NAME' in os.environ else 'NRMS'
 # Currently included model
-assert model_name in ['NRMS', 'NAML', 'LSTUR', 'DKN', 'HiFiArk', 'TANR']
+assert model_name in [
+    'NRMS', 'NAML', 'LSTUR', 'DKN', 'HiFiArk', 'TANR', 'Exp1'
+]
 
 
 class BaseConfig():
     """
     General configurations appiled to all models
     """
-    num_batches = 50000  # Number of batches to train, total: 300w = num_batches * batch_size
+    num_epochs = 1
     num_batches_show_loss = 100  # Number of batchs to show loss
     # Number of batchs to check metrics on validation dataset
     num_batches_validate = 1000
