@@ -2,6 +2,8 @@
 
 The repository currently includes the following models.
 
+**Models in published papers**
+
 | Model     | Full name                                                                 | Paper                                              |
 | --------- | ------------------------------------------------------------------------- | -------------------------------------------------- |
 | NRMS      | Neural News Recommendation with Multi-Head Self-Attention                 | https://www.aclweb.org/anthology/D19-1671/         |
@@ -10,6 +12,14 @@ The repository currently includes the following models.
 | DKN       | Deep Knowledge-Aware Network for News Recommendation                      | https://dl.acm.org/doi/abs/10.1145/3178876.3186175 |
 | Hi-Fi Ark | Deep User Representation via High-Fidelity Archive Network                | https://www.ijcai.org/Proceedings/2019/424         |
 | TANR      | Neural News Recommendation with Topic-Aware News Representation           | https://www.aclweb.org/anthology/P19-1110.pdf      |
+
+**Experimental models**
+
+| Model | Description |
+| ----- | ----------- |
+| Exp1  |             |
+
+
 
 ## Get started
 

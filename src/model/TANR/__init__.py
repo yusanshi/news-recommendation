@@ -94,10 +94,12 @@ class TANR(torch.nn.Module):
     def get_prediction(self, news_vector, user_vector):
         """
         Args:
-            news_vector: num_filters
-            user_vector: num_filters
+            news_vector: candidate_size, word_embedding_dim
+            user_vector: word_embedding_dim
         Returns:
-            click_probability: 0-dim tensor
+            click_probability: candidate_size
         """
-        # 0-dim tensor
-        return torch.dot(news_vector, user_vector)
+        # candidate_size
+        return self.click_predictor(
+            news_vector.unsqueeze(dim=0),
+            user_vector.unsqueeze(dim=0)).squeeze(dim=0)

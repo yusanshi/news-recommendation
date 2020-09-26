@@ -34,19 +34,18 @@ class BaseDataset(Dataset):
                 ])
             })
         self.news2dict = self.news_parsed.to_dict('index')
-        self.padding = {}
-        if 'category' in attributes['news']:
-            self.padding['category'] = 0
-        if 'subcategory' in attributes['news']:
-            self.padding['subcategory'] = 0
-        if 'title' in attributes['news']:
-            self.padding['title'] = [0] * config.num_words_title
-        if 'abstract' in attributes['news']:
-            self.padding['abstract'] = [0] * config.num_words_abstract
-        if 'title_entities' in attributes['news']:
-            self.padding['title_entities'] = [0] * config.num_words_title
-        if 'abstract_entities' in attributes['news']:
-            self.padding['abstract_entities'] = [0] * config.num_words_abstract
+        padding_all = {
+            'category': 0,
+            'subcategory': 0,
+            'title': [0] * config.num_words_title,
+            'abstract': [0] * config.num_words_abstract,
+            'title_entities': [0] * config.num_words_title,
+            'abstract_entities': [0] * config.num_words_abstract,
+        }
+        self.padding = {
+            k: v
+            for k, v in padding_all.items() if k in attributes['news']
+        }
 
     def __len__(self):
         return len(self.behaviors_parsed)

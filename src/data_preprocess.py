@@ -96,6 +96,7 @@ def parse_news(source, target, category2int_path, word2int_path,
     news = pd.read_table(source,
                          header=None,
                          usecols=[0, 1, 2, 3, 4, 6, 7],
+                         quoting=csv.QUOTE_NONE,
                          names=[
                              'id', 'category', 'subcategory', 'title',
                              'abstract', 'title_entities', 'abstract_entities'
@@ -301,7 +302,7 @@ def transform_entity_embedding(source, target, entity2int_path):
     merged_df = pd.merge(entity_embedding, entity2int,
                          on='entity').sort_values('int')
     entity_embedding_transformed = np.random.normal(
-        (len(entity2int) + 1, config.entity_embedding_dim))
+        size=(len(entity2int) + 1, config.entity_embedding_dim))
     for row in merged_df.itertuples(index=False):
         entity_embedding_transformed[row.int] = row.vector
     np.save(target, entity_embedding_transformed)

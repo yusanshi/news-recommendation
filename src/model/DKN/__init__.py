@@ -91,15 +91,15 @@ class DKN(torch.nn.Module):
     def get_prediction(self, candidate_news_vector, clicked_news_vector):
         """
         Args:
-            candidate_news_vector: len(window_sizes) * num_filters
+            candidate_news_vector: candidate_size, len(window_sizes) * num_filters
             clicked_news_vector: num_clicked_news_a_user, len(window_sizes) * num_filters
         Returns:
             click_probability: 0-dim tensor
         """
-        # 1, len(window_sizes) * num_filters
-        user_vector = self.attention(candidate_news_vector.unsqueeze(dim=0),
+        # candidate_size, len(window_sizes) * num_filters
+        user_vector = self.attention(candidate_news_vector,
                                      clicked_news_vector.unsqueeze(dim=0))
-        # 0-dim tensor
-        click_probability = self.click_predictor(
-            candidate_news_vector.unsqueeze(dim=0), user_vector).squeeze(dim=0)
+        # candidate_size
+        click_probability = self.click_predictor(candidate_news_vector,
+                                                 user_vector)
         return click_probability

@@ -112,7 +112,8 @@ def train():
                    batch_size=config.batch_size,
                    shuffle=True,
                    num_workers=config.num_workers,
-                   drop_last=True))
+                   drop_last=True,
+                   pin_memory=True))
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
@@ -148,7 +149,8 @@ def train():
                            batch_size=config.batch_size,
                            shuffle=True,
                            num_workers=config.num_workers,
-                           drop_last=True))
+                           drop_last=True,
+                           pin_memory=True))
             minibatch = next(dataloader)
 
         step += 1

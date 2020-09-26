@@ -171,10 +171,11 @@ def evaluate(model, directory):
     """
     news_dataset = NewsDataset(os.path.join(directory, 'news_parsed.tsv'))
     news_dataloader = DataLoader(news_dataset,
-                                 batch_size=config.batch_size,
+                                 batch_size=config.batch_size * 16,
                                  shuffle=False,
                                  num_workers=config.num_workers,
-                                 drop_last=False)
+                                 drop_last=False,
+                                 pin_memory=True)
 
     news2vector = {}
     for minibatch in tqdm(news_dataloader,
@@ -192,10 +193,11 @@ def evaluate(model, directory):
     user_dataset = UserDataset(os.path.join(directory, 'behaviors.tsv'),
                                'data/train/user2int.tsv')
     user_dataloader = DataLoader(user_dataset,
-                                 batch_size=config.batch_size,
+                                 batch_size=config.batch_size * 16,
                                  shuffle=False,
                                  num_workers=config.num_workers,
-                                 drop_last=False)
+                                 drop_last=False,
+                                 pin_memory=True)
 
     user2vector = {}
     for minibatch in tqdm(user_dataloader,
@@ -228,25 +230,30 @@ def evaluate(model, directory):
     mrrs = []
     ndcg5s = []
     ndcg10s = []
+
+    count = 0
     try:
         for minibatch in tqdm(behaviors_dataloader,
                               desc="Calculating probabilities"):
-            impression = {
-                news[0].split('-')[0]: model.get_prediction(
-                    news2vector[news[0].split('-')[0]],
-                    user2vector[minibatch['clicked_news_string'][0]]).item()
-                for news in minibatch['impressions']
-            }
+            count += 1
+            if count == 200000:
+                break
 
-            y_pred_list = list(impression.values())
-            y_list = [
+            y_pred = model.get_prediction(
+                torch.stack([
+                    news2vector[news[0].split('-')[0]]
+                    for news in minibatch['impressions']
+                ],
+                            dim=0),
+                user2vector[minibatch['clicked_news_string'][0]]).tolist()
+            y = [
                 int(news[0].split('-')[1]) for news in minibatch['impressions']
             ]
 
-            auc = roc_auc_score(y_list, y_pred_list)
-            mrr = mrr_score(y_list, y_pred_list)
-            ndcg5 = ndcg_score(y_list, y_pred_list, 5)
-            ndcg10 = ndcg_score(y_list, y_pred_list, 10)
+            auc = roc_auc_score(y, y_pred)
+            mrr = mrr_score(y, y_pred)
+            ndcg5 = ndcg_score(y, y_pred, 5)
+            ndcg10 = ndcg_score(y, y_pred, 10)
 
             aucs.append(auc)
             mrrs.append(mrr)

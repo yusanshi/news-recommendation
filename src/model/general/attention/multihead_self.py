@@ -1,52 +1,74 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import numpy as np
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-class MultiHeadSelfAttention(torch.nn.Module):
-    """
-    A general multi-head self attention module.
-    Originally for NRMS.
-    """
-    def __init__(self, candidate_vector_dim, num_attention_heads):
+class ScaledDotProductAttention(nn.Module):
+    def __init__(self, d_k):
+        super(ScaledDotProductAttention, self).__init__()
+        self.d_k = d_k
+
+    def forward(self, Q, K, V, attn_mask=None):
+        scores = torch.matmul(Q, K.transpose(-1, -2)) / np.sqrt(self.d_k)
+        scores = torch.exp(scores)
+        if attn_mask is not None:
+            scores = scores * attn_mask
+        attn = scores / (torch.sum(scores, dim=-1, keepdim=True) + 1e-8)
+
+        context = torch.matmul(attn, V)
+        return context, attn
+
+
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, d_model, n_heads, d_k=0, d_v=0):
         super(MultiHeadSelfAttention, self).__init__()
-        assert candidate_vector_dim % num_attention_heads == 0
-        self.candidate_vector_dim = candidate_vector_dim
-        self.num_attention_heads = num_attention_heads
-        self.single_head_dim = int(candidate_vector_dim / num_attention_heads)
-        self.Qs = nn.ParameterList([
-            nn.Parameter(
-                torch.empty(candidate_vector_dim,
-                            candidate_vector_dim).uniform_(-0.1, 0.1))
-            for _ in range(num_attention_heads)
-        ])
-        self.Vs = nn.ParameterList([
-            nn.Parameter(
-                torch.empty(
-                    candidate_vector_dim,
-                    self.single_head_dim,
-                ).uniform_(-0.1, 0.1)) for _ in range(num_attention_heads)
-        ])
+        self.d_model = d_model
+        self.n_heads = n_heads
+        if d_k == 0 or d_v == 0:
+            d_k = d_model // n_heads
+            d_v = d_model // n_heads
+        self.d_k = d_k
+        self.d_v = d_v
 
-    def forward(self, candidate_vector):
-        """
-        Args:
-            candidate_vector: batch_size, candidate_size, candidate_vector_dim
-        Returns:
-            (shape) batch_size, candidate_size, candidate_vector_dim
-        """
-        container = []
-        for i in range(self.num_attention_heads):
-            # batch_size, candidate_size, candidate_vector_dim
-            temp = torch.matmul(candidate_vector, self.Qs[i])
-            # batch_size, candidate_size, candidate_size
-            temp2 = torch.bmm(temp, candidate_vector.transpose(1, 2))
-            # batch_size, candidate_size, candidate_size
-            weights = F.softmax(temp2, dim=2)
-            # batch_size, candidate_size, candidate_vector_dim
-            weighted = torch.bmm(weights, candidate_vector)
-            # batch_size, candidate_size, single_head_dim
-            container.append(torch.matmul(weighted, self.Vs[i]))
-        # batch_size, candidate_size, candidate_vector_dim
-        target = torch.cat(container, dim=2)
-        return target
+        self.W_Q = nn.Linear(d_model, d_k * n_heads)
+        self.W_K = nn.Linear(d_model, d_k * n_heads)
+        self.W_V = nn.Linear(d_model, d_v * n_heads)
+
+        self._initialize_weights()
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight, gain=1)
+
+    def forward(self, Q, K=None, V=None, length=None):
+        if K is None:
+            K = Q
+        if V is None:
+            V = Q
+        batch_size = Q.size(0)
+
+        q_s = self.W_Q(Q).view(batch_size, -1, self.n_heads,
+                               self.d_k).transpose(1, 2)
+        k_s = self.W_K(K).view(batch_size, -1, self.n_heads,
+                               self.d_k).transpose(1, 2)
+        v_s = self.W_V(V).view(batch_size, -1, self.n_heads,
+                               self.d_v).transpose(1, 2)
+
+        if length is not None:
+            maxlen = Q.size(1)
+            attn_mask = torch.arange(maxlen).to(device).expand(
+                batch_size, maxlen) < length.to(device).view(-1, 1)
+            attn_mask = attn_mask.unsqueeze(1).expand(batch_size, maxlen,
+                                                      maxlen)
+            attn_mask = attn_mask.unsqueeze(1).repeat(1, self.n_heads, 1, 1)
+        else:
+            attn_mask = None
+
+        context, attn = ScaledDotProductAttention(self.d_k)(q_s, k_s, v_s,
+                                                            attn_mask)
+        context = context.transpose(1, 2).contiguous().view(
+            batch_size, -1, self.n_heads * self.d_v)
+        return context

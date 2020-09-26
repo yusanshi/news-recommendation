@@ -12,7 +12,7 @@ class BaseConfig():
     num_batches = 50000  # Number of batches to train, total: 300w = num_batches * batch_size
     num_batches_show_loss = 100  # Number of batchs to show loss
     # Number of batchs to check metrics on validation dataset
-    num_batches_validate = 800
+    num_batches_validate = 1000
     batch_size = 64
     learning_rate = 0.0001
     num_workers = 4  # Number of workers for data loading
@@ -25,7 +25,7 @@ class BaseConfig():
     negative_sampling_ratio = 4  # K
     dropout_probability = 0.2
     # Modify the following by the output of `src/dataprocess.py`
-    num_words = 1 + 44774
+    num_words = 1 + 44769
     num_categories = 1 + 295
     num_entities = 1 + 14697
     num_users = 1 + 711222
@@ -91,3 +91,12 @@ class TANRConfig(BaseConfig):
     num_filters = 300
     window_size = 3
     topic_classification_loss_weight = 0.1
+
+
+class Exp1Config(BaseConfig):
+    dataset_attributes = {
+        "news": ['category', 'subcategory', 'title', 'abstract'],
+        "record": []
+    }
+    # For multi-head self-attention
+    num_attention_heads = 15
