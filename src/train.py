@@ -266,7 +266,7 @@ def train():
                                              models[0]).state_dict(),
                         'optimizer_state_dict':
                         (optimizer if model_name != 'Exp1' else
-                         optimizer[0]).state_dict(),
+                         optimizers[0]).state_dict(),
                         'step':
                         step,
                         'early_stop_value':

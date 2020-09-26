@@ -232,36 +232,31 @@ def evaluate(model, directory):
     ndcg10s = []
 
     count = 0
-    try:
-        for minibatch in tqdm(behaviors_dataloader,
-                              desc="Calculating probabilities"):
-            count += 1
-            if count == 200000:
-                break
 
-            y_pred = model.get_prediction(
-                torch.stack([
-                    news2vector[news[0].split('-')[0]]
-                    for news in minibatch['impressions']
-                ],
-                            dim=0),
-                user2vector[minibatch['clicked_news_string'][0]]).tolist()
-            y = [
-                int(news[0].split('-')[1]) for news in minibatch['impressions']
-            ]
+    for minibatch in tqdm(behaviors_dataloader,
+                          desc="Calculating probabilities"):
+        count += 1
+        if count == 200000:
+            break
 
-            auc = roc_auc_score(y, y_pred)
-            mrr = mrr_score(y, y_pred)
-            ndcg5 = ndcg_score(y, y_pred, 5)
-            ndcg10 = ndcg_score(y, y_pred, 10)
+        y_pred = model.get_prediction(
+            torch.stack([
+                news2vector[news[0].split('-')[0]]
+                for news in minibatch['impressions']
+            ],
+                        dim=0),
+            user2vector[minibatch['clicked_news_string'][0]]).tolist()
+        y = [int(news[0].split('-')[1]) for news in minibatch['impressions']]
 
-            aucs.append(auc)
-            mrrs.append(mrr)
-            ndcg5s.append(ndcg5)
-            ndcg10s.append(ndcg10)
+        auc = roc_auc_score(y, y_pred)
+        mrr = mrr_score(y, y_pred)
+        ndcg5 = ndcg_score(y, y_pred, 5)
+        ndcg10 = ndcg_score(y, y_pred, 10)
 
-    except KeyboardInterrupt:
-        pass
+        aucs.append(auc)
+        mrrs.append(mrr)
+        ndcg5s.append(ndcg5)
+        ndcg10s.append(ndcg10)
 
     return np.mean(aucs), np.mean(mrrs), np.mean(ndcg5s), np.mean(ndcg10s)
 
