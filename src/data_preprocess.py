@@ -8,7 +8,6 @@ import random
 from nltk.tokenize import word_tokenize
 import numpy as np
 import csv
-from shutil import copyfile
 import importlib
 
 try:
