@@ -12,7 +12,7 @@ import importlib
 try:
     Model = getattr(importlib.import_module(f"model.{model_name}"), model_name)
     config = getattr(importlib.import_module('config'), f"{model_name}Config")
-except (AttributeError, ModuleNotFoundError):
+except AttributeError:
     print(f"{model_name} not included!")
     exit()
 

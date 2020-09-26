@@ -41,7 +41,9 @@ class NewsEncoder(torch.nn.Module):
                                 training=self.training)
         # batch_size, num_words_title, word_embedding_dim
         multihead_news_vector = self.multihead_self_attention(news_vector)
-        # TODO add dropout here?
+        multihead_news_vector = F.dropout(multihead_news_vector,
+                                          p=self.config.dropout_probability,
+                                          training=self.training)
         # batch_size,  word_embedding_dim
         final_news_vector = self.additive_attention(multihead_news_vector)
         return final_news_vector

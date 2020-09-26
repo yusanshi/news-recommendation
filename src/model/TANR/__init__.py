@@ -12,7 +12,7 @@ class TANR(torch.nn.Module):
     TANR network.
     Input 1 + K candidate news and a list of user clicked news, produce the click probability.
     """
-    def __init__(self, config, pretrained_word_embedding=None, writer=None):
+    def __init__(self, config, pretrained_word_embedding=None):
         super(TANR, self).__init__()
         self.config = config
         self.news_encoder = NewsEncoder(config, pretrained_word_embedding)

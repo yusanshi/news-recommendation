@@ -13,8 +13,7 @@ class DKN(torch.nn.Module):
                  config,
                  pretrained_word_embedding=None,
                  pretrained_entity_embedding=None,
-                 pretrained_context_embedding=None,
-                 writer=None):
+                 pretrained_context_embedding=None):
         super(DKN, self).__init__()
         self.config = config
         self.kcnn = KCNN(config, pretrained_word_embedding,

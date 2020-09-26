@@ -5,7 +5,7 @@ from model.general.click_predictor.dot_product import DotProductClickPredictor
 
 
 class Exp1(torch.nn.Module):
-    def __init__(self, config, pretrained_word_embedding=None, writer=None):
+    def __init__(self, config, pretrained_word_embedding=None):
         super(Exp1, self).__init__()
         self.config = config
         self.news_encoder = NewsEncoder(config, pretrained_word_embedding)

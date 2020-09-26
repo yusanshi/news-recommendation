@@ -16,7 +16,7 @@ import datetime
 try:
     Model = getattr(importlib.import_module(f"model.{model_name}"), model_name)
     config = getattr(importlib.import_module('config'), f"{model_name}Config")
-except (AttributeError, ModuleNotFoundError):
+except AttributeError:
     print(f"{model_name} not included!")
     exit()
 
@@ -95,9 +95,9 @@ def train():
 
         model = Model(config, pretrained_word_embedding,
                       pretrained_entity_embedding,
-                      pretrained_context_embedding, writer).to(device)
+                      pretrained_context_embedding).to(device)
     else:
-        model = Model(config, pretrained_word_embedding, writer).to(device)
+        model = Model(config, pretrained_word_embedding).to(device)
 
     print(model)
 
