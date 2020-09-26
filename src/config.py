@@ -1,6 +1,7 @@
 import os
 
-model_name = os.environ['MODEL_NAME'] if 'MODEL_NAME' in os.environ else 'NRMS'
+model_name = os.environ[
+    'MODEL_NAME'] if 'MODEL_NAME' in os.environ else 'Exp1'  # TODO
 # Currently included model
 assert model_name in [
     'NRMS', 'NAML', 'LSTUR', 'DKN', 'HiFiArk', 'TANR', 'Exp1'
@@ -15,7 +16,7 @@ class BaseConfig():
     num_batches_show_loss = 100  # Number of batchs to show loss
     # Number of batchs to check metrics on validation dataset
     num_batches_validate = 1000
-    batch_size = 64
+    batch_size = 32  # TODO
     learning_rate = 0.0001
     num_workers = 4  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
@@ -97,8 +98,10 @@ class TANRConfig(BaseConfig):
 
 class Exp1Config(BaseConfig):
     dataset_attributes = {
-        "news": ['category', 'subcategory', 'title', 'abstract'],
+        # TODO ['category', 'subcategory', 'title', 'abstract'],
+        "news": ['title'],
         "record": []
     }
     # For multi-head self-attention
     num_attention_heads = 15
+    ensemble_factor = 3

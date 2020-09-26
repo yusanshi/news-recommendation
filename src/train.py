@@ -3,6 +3,7 @@ from torch.utils.tensorboard import SummaryWriter
 from dataset import BaseDataset
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import time
 import numpy as np
 from config import model_name
@@ -96,10 +97,18 @@ def train():
         model = Model(config, pretrained_word_embedding,
                       pretrained_entity_embedding,
                       pretrained_context_embedding).to(device)
+    elif model_name == 'Exp1':
+        models = nn.ModuleList([
+            Model(config, pretrained_word_embedding).to(device)
+            for _ in range(config.ensemble_factor)
+        ])
     else:
         model = Model(config, pretrained_word_embedding).to(device)
 
-    print(model)
+    if model_name != 'Exp1':
+        print(model)
+    else:
+        print(models[0])
 
     dataset = BaseDataset('data/train/behaviors_parsed.tsv',
                           'data/train/news_parsed.tsv',
@@ -114,9 +123,16 @@ def train():
                    num_workers=config.num_workers,
                    drop_last=True,
                    pin_memory=True))
-
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    if model_name != 'Exp1':
+        criterion = nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(model.parameters(),
+                                     lr=config.learning_rate)
+    else:
+        criterion = nn.NLLLoss()
+        optimizers = [
+            torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+            for model in models
+        ]
     start_time = time.time()
     loss_full = []
     exhaustion_count = 0
@@ -130,11 +146,18 @@ def train():
     if checkpoint_path is not None:
         print(f"Load saved parameters in {checkpoint_path}")
         checkpoint = torch.load(checkpoint_path)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        step = checkpoint['step']
         early_stopping(checkpoint['early_stop_value'])
-        model.train()
+        step = checkpoint['step']
+        if model_name != 'Exp1':
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            model.train()
+        else:
+            for model in models:
+                model.load_state_dict(checkpoint['model_state_dict'])
+                model.train()
+            for optimizer in optimizers:
+                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     for i in tqdm(range(
             1,
@@ -167,6 +190,15 @@ def train():
         elif model_name == 'TANR':
             y_pred, topic_classification_loss = model(
                 minibatch["candidate_news"], minibatch["clicked_news"])
+        elif model_name == 'Exp1':
+            y_preds = [
+                model(minibatch["candidate_news"], minibatch["clicked_news"])
+                for model in models
+            ]
+            y_pred_averaged = torch.stack(
+                [F.softmax(y_pred, dim=1) for y_pred in y_preds],
+                dim=-1).mean(dim=-1)
+            y_pred = torch.log(y_pred_averaged)
         else:
             y_pred = model(minibatch["candidate_news"],
                            minibatch["clicked_news"])
@@ -192,9 +224,17 @@ def train():
                     topic_classification_loss.item() / loss.item(), step)
             loss += config.topic_classification_loss_weight * topic_classification_loss
         loss_full.append(loss.item())
-        optimizer.zero_grad()
+        if model_name != 'Exp1':
+            optimizer.zero_grad()
+        else:
+            for optimizer in optimizers:
+                optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
+        if model_name != 'Exp1':
+            optimizer.step()
+        else:
+            for optimizer in optimizers:
+                optimizer.step()
 
         if i % 10 == 0:
             writer.add_scalar('Train/Loss', loss.item(), step)
@@ -206,7 +246,7 @@ def train():
 
         if i % config.num_batches_validate == 0:
             val_auc, val_mrr, val_ndcg5, val_ndcg10 = evaluate(
-                model, './data/val')
+                model if model_name != 'Exp1' else models[0], './data/val')
             writer.add_scalar('Validation/AUC', val_auc, step)
             writer.add_scalar('Validation/MRR', val_mrr, step)
             writer.add_scalar('Validation/nDCG@5', val_ndcg5, step)
@@ -222,10 +262,15 @@ def train():
             elif get_better:
                 torch.save(
                     {
-                        'model_state_dict': model.state_dict(),
-                        'optimizer_state_dict': optimizer.state_dict(),
-                        'step': step,
-                        'early_stop_value': -val_auc
+                        'model_state_dict': (model if model_name != 'Exp1' else
+                                             models[0]).state_dict(),
+                        'optimizer_state_dict':
+                        (optimizer if model_name != 'Exp1' else
+                         optimizer[0]).state_dict(),
+                        'step':
+                        step,
+                        'early_stop_value':
+                        -val_auc
                     }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
 
 
