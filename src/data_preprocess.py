@@ -9,6 +9,7 @@ from nltk.tokenize import word_tokenize
 import numpy as np
 import csv
 import importlib
+from transformers import RobertaTokenizer
 
 try:
     config = getattr(importlib.import_module('config'), f"{model_name}Config")
@@ -99,10 +100,29 @@ def parse_news(source, target, category2int_path, word2int_path,
                          names=[
                              'id', 'category', 'subcategory', 'title',
                              'abstract', 'title_entities', 'abstract_entities'
-                         ])
+                         ])  # TODO try to avoid csv.QUOTE_NONE
     news.title_entities.fillna('[]', inplace=True)
     news.abstract_entities.fillna('[]', inplace=True)
     news.fillna(' ', inplace=True)
+
+    tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
+    title_roberta = tokenizer(news.title.tolist(),
+                              padding='max_length',
+                              truncation=True,
+                              max_length=config.num_words_title)
+    abstract_roberta = tokenizer(news.abstract.tolist(),
+                                 padding='max_length',
+                                 truncation=True,
+                                 max_length=config.num_words_abstract)
+
+    roberta_df = pd.DataFrame(data=[
+        title_roberta['input_ids'], title_roberta['attention_mask'],
+        abstract_roberta['input_ids'], abstract_roberta['attention_mask']
+    ]).T
+    roberta_df.columns = [
+        'title_roberta', 'title_mask_roberta', 'abstract_roberta',
+        'abstract_mask_roberta'
+    ]
 
     def parse_row(row):
         new_row = [
@@ -200,7 +220,7 @@ def parse_news(source, target, category2int_path, word2int_path,
                 entity2int[k] = len(entity2int) + 1
 
         parsed_news = news.swifter.apply(parse_row, axis=1)
-
+        parsed_news = pd.concat([parsed_news, roberta_df], axis=1)
         parsed_news.to_csv(target, sep='\t', index=False)
 
         pd.DataFrame(category2int.items(),
@@ -235,7 +255,7 @@ def parse_news(source, target, category2int_path, word2int_path,
         entity2int = dict(pd.read_table(entity2int_path).values.tolist())
 
         parsed_news = news.swifter.apply(parse_row, axis=1)
-
+        parsed_news = pd.concat([parsed_news, roberta_df], axis=1)
         parsed_news.to_csv(target, sep='\t', index=False)
 
     else:

@@ -3,7 +3,7 @@ import os
 model_name = os.environ['MODEL_NAME'] if 'MODEL_NAME' in os.environ else 'NRMS'
 # Currently included model
 assert model_name in [
-    'NRMS', 'NAML', 'LSTUR', 'DKN', 'HiFiArk', 'TANR', 'Exp1'
+    'NRMS', 'NAML', 'LSTUR', 'DKN', 'HiFiArk', 'TANR', 'Exp1', 'Exp2'
 ]
 
 
@@ -104,3 +104,16 @@ class Exp1Config(BaseConfig):
     # For multi-head self-attention
     num_attention_heads = 15
     ensemble_factor = 1  # Not use ensemble since it's too expensive
+
+
+class Exp2Config(BaseConfig):
+    dataset_attributes = {
+        "news":
+        ['category', 'subcategory', 'title_roberta', 'title_mask_roberta'],
+        "record": []
+    }
+    roberta_level = 'word'
+    assert roberta_level in ['word', 'sentence']
+    fine_tune = False
+    # For multi-head self-attention
+    num_attention_heads = 15

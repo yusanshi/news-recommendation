@@ -17,7 +17,8 @@ class BaseDataset(Dataset):
         self.attributes = attributes
         assert all(attribute in [
             'category', 'subcategory', 'title', 'abstract', 'title_entities',
-            'abstract_entities'
+            'abstract_entities', 'title_roberta', 'title_mask_roberta',
+            'abstract_roberta', 'abstract_mask_roberta'
         ] for attribute in attributes['news'])
         assert all(attribute in ['user', 'clicked_news_length']
                    for attribute in attributes['record'])
@@ -30,7 +31,9 @@ class BaseDataset(Dataset):
             converters={
                 attribute: literal_eval
                 for attribute in set(attributes['news']) & set([
-                    'title', 'abstract', 'title_entities', 'abstract_entities'
+                    'title', 'abstract', 'title_entities', 'abstract_entities',
+                    'title_roberta', 'title_mask_roberta', 'abstract_roberta',
+                    'abstract_mask_roberta'
                 ])
             })
         self.news2dict = self.news_parsed.to_dict('index')
@@ -41,6 +44,10 @@ class BaseDataset(Dataset):
             'abstract': [0] * config.num_words_abstract,
             'title_entities': [0] * config.num_words_title,
             'abstract_entities': [0] * config.num_words_abstract,
+            'title_roberta': [0] * config.num_words_title,
+            'title_mask_roberta': [0] * config.num_words_title,
+            'abstract_roberta': [0] * config.num_words_abstract,
+            'abstract_mask_roberta': [0] * config.num_words_abstract
         }
         self.padding = {
             k: v

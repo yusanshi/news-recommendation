@@ -53,13 +53,16 @@ class NewsDataset(Dataset):
     """
     def __init__(self, news_path):
         super(NewsDataset, self).__init__()
-        self.news_parsed = pd.read_table(news_path,
-                                         converters={
-                                             'title': literal_eval,
-                                             'abstract': literal_eval,
-                                             'title_entities': literal_eval,
-                                             'abstract_entities': literal_eval
-                                         })
+        self.news_parsed = pd.read_table(
+            news_path,
+            converters={
+                attribute: literal_eval
+                for attribute in [
+                    'title', 'abstract', 'title_entities', 'abstract_entities',
+                    'title_roberta', 'title_mask_roberta', 'abstract_roberta',
+                    'abstract_mask_roberta'
+                ]
+            })
 
     def __len__(self):
         return len(self.news_parsed)
@@ -73,7 +76,11 @@ class NewsDataset(Dataset):
             "title": row.title,
             "abstract": row.abstract,
             "title_entities": row.title_entities,
-            "abstract_entities": row.abstract_entities
+            "abstract_entities": row.abstract_entities,
+            "title_roberta": row.title_roberta,
+            "title_mask_roberta": row.title_mask_roberta,
+            "abstract_roberta": row.abstract_roberta,
+            "abstract_mask_roberta": row.abstract_mask_roberta
         }
         return item
 

@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from model.general.attention.multihead_self import MultiHeadSelfAttention
 from model.general.attention.additive import AdditiveAttention
 
@@ -9,6 +10,9 @@ class UserEncoder(torch.nn.Module):
         self.config = config
         self.multihead_self_attention = MultiHeadSelfAttention(
             config.word_embedding_dim, config.num_attention_heads)
+        self.position_embedding = nn.Parameter(
+            torch.empty(config.num_clicked_news_a_user,
+                        config.word_embedding_dim).uniform_(-0.1, 0.1))
         self.additive_attention = AdditiveAttention(config.query_vector_dim,
                                                     config.word_embedding_dim)
 
@@ -17,10 +21,11 @@ class UserEncoder(torch.nn.Module):
         Args:
             user_vector: batch_size, num_clicked_news_a_user, word_embedding_dim
         Returns:
-            (shape) batch_size, word_embedding_dim
+            (shape) batch_size,  word_embedding_dim
         """
         # batch_size, num_clicked_news_a_user, word_embedding_dim
-        multihead_user_vector = self.multihead_self_attention(user_vector)
+        multihead_user_vector = self.multihead_self_attention(
+            user_vector + self.position_embedding.expand_as(user_vector))
         # batch_size, word_embedding_dim
         final_user_vector = self.additive_attention(multihead_user_vector)
         return final_user_vector
