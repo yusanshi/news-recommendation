@@ -5,6 +5,7 @@ import torch
 from config import model_name
 from torch.utils.data import Dataset, DataLoader
 import os
+import sys
 import pandas as pd
 from ast import literal_eval
 import importlib
@@ -157,7 +158,7 @@ class BehaviorsDataset(Dataset):
 
 
 @torch.no_grad()
-def evaluate(model, directory):
+def evaluate(model, directory, max_count=sys.maxsize):
     """
     Evaluate model on target directory.
     Args:
@@ -236,7 +237,7 @@ def evaluate(model, directory):
     for minibatch in tqdm(behaviors_dataloader,
                           desc="Calculating probabilities"):
         count += 1
-        if count == 200000:
+        if count == max_count:
             break
 
         y_pred = model.get_prediction(

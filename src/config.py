@@ -11,7 +11,7 @@ class BaseConfig():
     """
     General configurations appiled to all models
     """
-    num_epochs = 1
+    num_epochs = 2
     num_batches_show_loss = 100  # Number of batchs to show loss
     # Number of batchs to check metrics on validation dataset
     num_batches_validate = 1000
@@ -21,15 +21,15 @@ class BaseConfig():
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
     num_words_title = 20
     num_words_abstract = 50
-    word_freq_threshold = 3
-    entity_freq_threshold = 3
+    word_freq_threshold = 1
+    entity_freq_threshold = 2
     entity_confidence_threshold = 0.5
-    negative_sampling_ratio = 4  # K
+    negative_sampling_ratio = 2  # K
     dropout_probability = 0.2
     # Modify the following by the output of `src/dataprocess.py`
-    num_words = 1 + 44769
+    num_words = 1 + 101220
     num_categories = 1 + 295
-    num_entities = 1 + 14697
+    num_entities = 1 + 21842
     num_users = 1 + 711222
     word_embedding_dim = 300
     category_embedding_dim = 100
@@ -103,4 +103,4 @@ class Exp1Config(BaseConfig):
     }
     # For multi-head self-attention
     num_attention_heads = 15
-    ensemble_factor = 3
+    ensemble_factor = 1  # Not use ensemble since it's too expensive
