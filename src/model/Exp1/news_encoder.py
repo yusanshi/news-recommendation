@@ -28,7 +28,7 @@ class TextEncoder(torch.nn.Module):
         multihead_text_vector = F.dropout(multihead_text_vector,
                                           p=self.dropout_probability,
                                           training=self.training)
-        # batch_size,  word_embedding_dim
+        # batch_size, word_embedding_dim
         final_text_vector = self.additive_attention(multihead_text_vector)
         return final_text_vector
 

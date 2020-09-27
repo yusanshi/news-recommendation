@@ -21,7 +21,7 @@ class UserEncoder(torch.nn.Module):
         Args:
             user_vector: batch_size, num_clicked_news_a_user, word_embedding_dim
         Returns:
-            (shape) batch_size,  word_embedding_dim
+            (shape) batch_size, word_embedding_dim
         """
         # batch_size, num_clicked_news_a_user, word_embedding_dim
         multihead_user_vector = self.multihead_self_attention(
