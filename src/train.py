@@ -247,9 +247,11 @@ def train():
             )
 
         if i % config.num_batches_validate == 0:
+            (model if model_name != 'Exp1' else models[0]).eval()
             val_auc, val_mrr, val_ndcg5, val_ndcg10 = evaluate(
                 model if model_name != 'Exp1' else models[0], './data/val',
                 200000)
+            (model if model_name != 'Exp1' else models[0]).train()
             writer.add_scalar('Validation/AUC', val_auc, step)
             writer.add_scalar('Validation/MRR', val_mrr, step)
             writer.add_scalar('Validation/nDCG@5', val_ndcg5, step)
