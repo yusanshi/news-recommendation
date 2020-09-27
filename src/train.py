@@ -261,18 +261,21 @@ def train():
                 tqdm.write('Early stop.')
                 break
             elif get_better:
-                torch.save(
-                    {
-                        'model_state_dict': (model if model_name != 'Exp1' else
-                                             models[0]).state_dict(),
-                        'optimizer_state_dict':
-                        (optimizer if model_name != 'Exp1' else
-                         optimizers[0]).state_dict(),
-                        'step':
-                        step,
-                        'early_stop_value':
-                        -val_auc
-                    }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
+                try:
+                    torch.save(
+                        {
+                            'model_state_dict': (model if model_name != 'Exp1'
+                                                 else models[0]).state_dict(),
+                            'optimizer_state_dict':
+                            (optimizer if model_name != 'Exp1' else
+                             optimizers[0]).state_dict(),
+                            'step':
+                            step,
+                            'early_stop_value':
+                            -val_auc
+                        }, f"./checkpoint/{model_name}/ckpt-{step}.pth")
+                except OSError as error:
+                    print(f"OS error: {error}")
 
 
 def time_since(since):
