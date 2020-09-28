@@ -275,10 +275,13 @@ def evaluate(model, directory, max_count=sys.maxsize):
             user2vector[minibatch['clicked_news_string'][0]]).tolist()
         y = [int(news[0].split('-')[1]) for news in minibatch['impressions']]
 
-        auc = roc_auc_score(y, y_pred)
-        mrr = mrr_score(y, y_pred)
-        ndcg5 = ndcg_score(y, y_pred, 5)
-        ndcg10 = ndcg_score(y, y_pred, 10)
+        try:
+            auc = roc_auc_score(y, y_pred)
+            mrr = mrr_score(y, y_pred)
+            ndcg5 = ndcg_score(y, y_pred, 5)
+            ndcg10 = ndcg_score(y, y_pred, 10)
+        except ValueError:
+            continue
 
         aucs.append(auc)
         mrrs.append(mrr)
