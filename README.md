@@ -18,6 +18,7 @@ The repository currently includes the following models.
 | Model | Description |
 | ----- | ----------- |
 | Exp1  |             |
+| Exp2  | RoBERTa     |
 
 
 

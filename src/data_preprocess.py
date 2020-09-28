@@ -135,6 +135,10 @@ def parse_news(source, target, roberta_output_dir, category2int_path,
     roberta = RobertaModel.from_pretrained('roberta-base',
                                            return_dict=True).to(device)
     with torch.no_grad():
+        title_last_hidden_state = []
+        title_pooler_output = []
+        abstract_last_hidden_state = []
+        abstract_pooler_output = []
         for count in tqdm(range(math.ceil(len(news) / config.batch_size)),
                           desc="Calculating news embeddings with RoBERTa"):
             title_roberta_minibatch = {
@@ -142,58 +146,30 @@ def parse_news(source, target, roberta_output_dir, category2int_path,
                 for k, v in title_roberta.items()
             }
             title_outputs = roberta(**title_roberta_minibatch)
-            try:
-                title_last_hidden_state = np.concatenate([
-                    title_last_hidden_state,
-                    title_outputs['last_hidden_state'].cpu().numpy()
-                ],
-                                                         axis=0)
-            except NameError:
-                title_last_hidden_state = title_outputs[
-                    'last_hidden_state'].cpu().numpy()
-            try:
-                title_pooler_output = np.concatenate([
-                    title_pooler_output,
-                    title_outputs['pooler_output'].cpu().numpy()
-                ],
-                                                     axis=0)
-            except NameError:
-                title_pooler_output = title_outputs['pooler_output'].cpu(
-                ).numpy()
+            title_last_hidden_state.append(
+                title_outputs['last_hidden_state'].cpu().numpy())
+            title_pooler_output.append(
+                title_outputs['pooler_output'].cpu().numpy())
 
             abstract_roberta_minibatch = {
                 k: v[count * config.batch_size:(1 + count) * config.batch_size]
                 for k, v in abstract_roberta.items()
             }
             abstract_outputs = roberta(**abstract_roberta_minibatch)
-            try:
-                abstract_last_hidden_state = np.concatenate([
-                    abstract_last_hidden_state,
-                    abstract_outputs['last_hidden_state'].cpu().numpy()
-                ],
-                                                            axis=0)
-            except NameError:
-                abstract_last_hidden_state = abstract_outputs[
-                    'last_hidden_state'].cpu().numpy()
-            try:
-                abstract_pooler_output = np.concatenate([
-                    abstract_pooler_output,
-                    abstract_outputs['pooler_output'].cpu().numpy()
-                ],
-                                                        axis=0)
-            except NameError:
-                abstract_pooler_output = abstract_outputs['pooler_output'].cpu(
-                ).numpy()
+            abstract_last_hidden_state.append(
+                abstract_outputs['last_hidden_state'].cpu().numpy())
+            abstract_pooler_output.append(
+                abstract_outputs['pooler_output'].cpu().numpy())
 
         np.save(path.join(roberta_output_dir, 'title_last_hidden_state.npy'),
-                title_last_hidden_state)
+                np.concatenate(title_last_hidden_state, axis=0))
         np.save(path.join(roberta_output_dir, 'title_pooler_output.npy'),
-                title_pooler_output)
+                np.concatenate(title_pooler_output, axis=0))
         np.save(
             path.join(roberta_output_dir, 'abstract_last_hidden_state.npy'),
-            abstract_last_hidden_state)
+            np.concatenate(abstract_last_hidden_state, axis=0))
         np.save(path.join(roberta_output_dir, 'abstract_pooler_output.npy'),
-                abstract_pooler_output)
+                np.concatenate(abstract_pooler_output, axis=0))
 
     def parse_row(row):
         new_row = [
