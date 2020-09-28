@@ -67,7 +67,7 @@ class NewsDataset(Dataset):
         self.news2dict = self.news_parsed.to_dict('index')
         for key1 in self.news2dict.keys():
             for key2 in self.news2dict[key1].keys():
-                if type(key2) != str:
+                if type(self.news2dict[key1][key2]) != str:
                     self.news2dict[key1][key2] = torch.tensor(
                         self.news2dict[key1][key2])
 
