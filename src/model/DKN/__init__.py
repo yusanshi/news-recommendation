@@ -29,15 +29,15 @@ class DKN(torch.nn.Module):
             candidate_news:
                 [
                     {
-                        "title": Tensor(batch_size) * num_words_title,
-                        "title_entities": Tensor(batch_size) * num_words_title
+                        "title": batch_size * num_words_title,
+                        "title_entities": batch_size * num_words_title
                     } * (1 + K)
                 ]
             clicked_news:
                 [
                     {
-                        "title": Tensor(batch_size) * num_words_title,
-                        "title_entities": Tensor(batch_size) * num_words_title
+                        "title": batch_size * num_words_title,
+                        "title_entities": batch_size * num_words_title
                     } * num_clicked_news_a_user
                 ]
         Returns:
@@ -68,8 +68,8 @@ class DKN(torch.nn.Module):
         Args:
             news:
                 {
-                    "title": Tensor(batch_size) * num_words_title,
-                    "title_entities": Tensor(batch_size) * num_words_title
+                    "title": batch_size * num_words_title,
+                    "title_entities": batch_size * num_words_title
                 }
         Returns:
             (shape) batch_size, len(window_sizes) * num_filters

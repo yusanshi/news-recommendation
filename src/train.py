@@ -113,8 +113,7 @@ def train():
         print(models[0])
 
     dataset = BaseDataset('data/train/behaviors_parsed.tsv',
-                          'data/train/news_parsed.tsv',
-                          config.dataset_attributes)
+                          'data/train/news_parsed.tsv', 'data/train/roberta')
 
     print(f"Load training dataset with size {len(dataset)}.")
 

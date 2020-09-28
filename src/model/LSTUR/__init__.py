@@ -49,17 +49,17 @@ class LSTUR(torch.nn.Module):
             candidate_news:
                 [
                     {
-                        "category": Tensor(batch_size),
-                        "subcategory": Tensor(batch_size),
-                        "title": Tensor(batch_size) * num_words_title
+                        "category": batch_size,
+                        "subcategory": batch_size,
+                        "title": batch_size * num_words_title
                     } * (1 + K)
                 ]
             clicked_news:
                 [
                     {
-                        "category": Tensor(batch_size),
-                        "subcategory": Tensor(batch_size),
-                        "title": Tensor(batch_size) * num_words_title
+                        "category": batch_size,
+                        "subcategory": batch_size,
+                        "title": batch_size * num_words_title
                     } * num_clicked_news_a_user
                 ]
         Returns:

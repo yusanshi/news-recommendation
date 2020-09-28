@@ -4,7 +4,7 @@ from tqdm import tqdm
 import torch
 from config import model_name
 from torch.utils.data import Dataset, DataLoader
-import os
+from os import path
 import sys
 import pandas as pd
 from ast import literal_eval
@@ -51,37 +51,56 @@ class NewsDataset(Dataset):
     """
     Load news for evaluation.
     """
-    def __init__(self, news_path):
+    def __init__(self, news_path, roberta_embedding_dir):
         super(NewsDataset, self).__init__()
         self.news_parsed = pd.read_table(
             news_path,
+            usecols=['id'] + config.dataset_attributes['news'],
             converters={
                 attribute: literal_eval
-                for attribute in [
+                for attribute in set(config.dataset_attributes['news']) & set([
                     'title', 'abstract', 'title_entities', 'abstract_entities',
                     'title_roberta', 'title_mask_roberta', 'abstract_roberta',
                     'abstract_mask_roberta'
-                ]
+                ])
             })
+        self.news2dict = self.news_parsed.to_dict('index')
+        for key1 in self.news2dict.keys():
+            for key2 in self.news2dict[key1].keys():
+                if type(key2) != str:
+                    self.news2dict[key1][key2] = torch.tensor(
+                        self.news2dict[key1][key2])
+
+        if model_name == 'Exp2' and not config.fine_tune:
+            if config.roberta_level == 'word':
+                self.roberta_embedding = {
+                    k: torch.from_numpy(
+                        np.load(
+                            path.join(roberta_embedding_dir,
+                                      f'{k}_last_hidden_state.npy'))).float()
+                    for k in set(config.dataset_attributes['news'])
+                    & set(['title', 'abstract'])
+                }
+
+            elif config.roberta_level == 'sentence':
+                self.roberta_embedding = {
+                    k: torch.from_numpy(
+                        np.load(
+                            path.join(roberta_embedding_dir,
+                                      f'{k}_pooler_output.npy'))).float()
+                    for k in set(config.dataset_attributes['news'])
+                    & set(['title', 'abstract'])
+                }
 
     def __len__(self):
         return len(self.news_parsed)
 
     def __getitem__(self, idx):
-        row = self.news_parsed.iloc[idx]
-        item = {
-            "id": row.id,
-            "category": row.category,
-            "subcategory": row.subcategory,
-            "title": row.title,
-            "abstract": row.abstract,
-            "title_entities": row.title_entities,
-            "abstract_entities": row.abstract_entities,
-            "title_roberta": row.title_roberta,
-            "title_mask_roberta": row.title_mask_roberta,
-            "abstract_roberta": row.abstract_roberta,
-            "abstract_mask_roberta": row.abstract_mask_roberta
-        }
+        item = self.news2dict[idx]
+        if model_name == 'Exp2' and not config.fine_tune:
+            for k in set(config.dataset_attributes['news']) & set(
+                ['title', 'abstract']):
+                item[k] = self.roberta_embedding[k][idx]
         return item
 
 
@@ -177,7 +196,8 @@ def evaluate(model, directory, max_count=sys.maxsize):
         nDCG@5
         nDCG@10
     """
-    news_dataset = NewsDataset(os.path.join(directory, 'news_parsed.tsv'))
+    news_dataset = NewsDataset(path.join(directory, 'news_parsed.tsv'),
+                               path.join(directory, 'roberta'))
     news_dataloader = DataLoader(news_dataset,
                                  batch_size=config.batch_size * 16,
                                  shuffle=False,
@@ -198,7 +218,7 @@ def evaluate(model, directory, max_count=sys.maxsize):
     news2vector['PADDED_NEWS'] = torch.zeros(
         list(news2vector.values())[0].size())
 
-    user_dataset = UserDataset(os.path.join(directory, 'behaviors.tsv'),
+    user_dataset = UserDataset(path.join(directory, 'behaviors.tsv'),
                                'data/train/user2int.tsv')
     user_dataloader = DataLoader(user_dataset,
                                  batch_size=config.batch_size * 16,
@@ -227,8 +247,7 @@ def evaluate(model, directory, max_count=sys.maxsize):
                 if user not in user2vector:
                     user2vector[user] = vector
 
-    behaviors_dataset = BehaviorsDataset(
-        os.path.join(directory, 'behaviors.tsv'))
+    behaviors_dataset = BehaviorsDataset(path.join(directory, 'behaviors.tsv'))
     behaviors_dataloader = DataLoader(behaviors_dataset,
                                       batch_size=1,
                                       shuffle=False,
@@ -276,8 +295,7 @@ if __name__ == '__main__':
     # since it will be loaded from checkpoint later
     model = Model(config).to(device)
     from train import latest_checkpoint  # Avoid circular imports
-    checkpoint_path = latest_checkpoint(
-        os.path.join('./checkpoint', model_name))
+    checkpoint_path = latest_checkpoint(path.join('./checkpoint', model_name))
     if checkpoint_path is None:
         print('No checkpoint file found!')
         exit()

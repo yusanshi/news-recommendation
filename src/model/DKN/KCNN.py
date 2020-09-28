@@ -58,23 +58,22 @@ class KCNN(torch.nn.Module):
         Args:
           news:
             {
-                "title": Tensor(batch_size) * num_words_title,
-                "title_entities": Tensor(batch_size) * num_words_title
+                "title": batch_size * num_words_title,
+                "title_entities": batch_size * num_words_title
             }
 
         Returns:
             final_vector: batch_size, len(window_sizes) * num_filters
         """
         # batch_size, num_words_title, word_embedding_dim
-        word_vector = self.word_embedding(
-            torch.stack(news["title"], dim=1).to(device))
+        word_vector = self.word_embedding(news["title"].to(device))
         # batch_size, num_words_title, entity_embedding_dim
         entity_vector = self.entity_embedding(
-            torch.stack(news["title_entities"], dim=1).to(device))
+            news["title_entities"].to(device))
         if self.config.use_context:
             # batch_size, num_words_title, entity_embedding_dim
             context_vector = self.context_embedding(
-                torch.stack(news["title_entities"], dim=1).to(device))
+                news["title_entities"].to(device))
 
         # batch_size, num_words_title, word_embedding_dim
         transformed_entity_vector = torch.tanh(

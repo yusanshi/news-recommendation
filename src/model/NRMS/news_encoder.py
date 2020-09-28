@@ -29,14 +29,13 @@ class NewsEncoder(torch.nn.Module):
         Args:
             news:
                 {
-                    "title": Tensor(batch_size) * num_words_title
+                    "title": batch_size * num_words_title
                 }
         Returns:
             (shape) batch_size, word_embedding_dim
         """
         # batch_size, num_words_title, word_embedding_dim
-        news_vector = F.dropout(self.word_embedding(
-            torch.stack(news["title"], dim=1).to(device)),
+        news_vector = F.dropout(self.word_embedding(news["title"].to(device)),
                                 p=self.config.dropout_probability,
                                 training=self.training)
         # batch_size, num_words_title, word_embedding_dim

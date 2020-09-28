@@ -108,12 +108,18 @@ class Exp1Config(BaseConfig):
 
 class Exp2Config(BaseConfig):
     dataset_attributes = {
-        "news":
-        ['category', 'subcategory', 'title_roberta', 'title_mask_roberta'],
+        "news": ['category', 'subcategory', 'title'],
         "record": []
     }
-    roberta_level = 'word'
+    roberta_level = os.environ[
+        'ROBERTA_LEVEL'] if 'ROBERTA_LEVEL' in os.environ else 'sentence'
     assert roberta_level in ['word', 'sentence']
     fine_tune = False
     # For multi-head self-attention
     num_attention_heads = 15
+    if fine_tune:
+        for x in ['title', 'abstract']:
+            if x in dataset_attributes['news']:
+                dataset_attributes['news'].remove(x)
+                dataset_attributes['news'].extend(
+                    [f'{x}_roberta', f'{x}_mask_roberta'])

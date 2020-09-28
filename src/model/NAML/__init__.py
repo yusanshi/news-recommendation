@@ -22,19 +22,19 @@ class NAML(torch.nn.Module):
             candidate_news:
                 [
                     {
-                        "category": Tensor(batch_size),
-                        "subcategory": Tensor(batch_size),
-                        "title": Tensor(batch_size) * num_words_title,
-                        "abstract": Tensor(batch_size) * num_words_abstract
+                        "category": batch_size,
+                        "subcategory": batch_size,
+                        "title": batch_size * num_words_title,
+                        "abstract": batch_size * num_words_abstract
                     } * (1 + K)
                 ]
             clicked_news:
                 [
                     {
-                        "category": Tensor(batch_size),
-                        "subcategory": Tensor(batch_size),
-                        "title": Tensor(batch_size) * num_words_title,
-                        "abstract": Tensor(batch_size) * num_words_abstract
+                        "category": batch_size,
+                        "subcategory": batch_size,
+                        "title": batch_size * num_words_title,
+                        "abstract": batch_size * num_words_abstract
                     } * num_clicked_news_a_user
                 ]
         Returns:
@@ -58,10 +58,10 @@ class NAML(torch.nn.Module):
         Args:
             news:
                 {
-                    "category": Tensor(batch_size),
-                    "subcategory": Tensor(batch_size),
-                    "title": Tensor(batch_size) * num_words_title,
-                    "abstract": Tensor(batch_size) * num_words_abstract
+                    "category": batch_size,
+                    "subcategory": batch_size,
+                    "title": batch_size * num_words_title,
+                    "abstract": batch_size * num_words_abstract
                 }
         Returns:
             (shape) batch_size, num_filters

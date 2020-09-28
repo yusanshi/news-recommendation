@@ -27,15 +27,15 @@ class TANR(torch.nn.Module):
             candidate_news:
                 [
                     {
-                        "category": Tensor(batch_size),
-                        "title": Tensor(batch_size) * num_words_title
+                        "category": batch_size,
+                        "title": batch_size * num_words_title
                     } * (1 + K)
                 ]
             clicked_news:
                 [
                     {
-                        "category": Tensor(batch_size),
-                        "title": Tensor(batch_size) * num_words_title
+                        "category": batch_size,
+                        "title": batch_size * num_words_title
                     } * num_clicked_news_a_user
                 ]
         Returns:
@@ -73,7 +73,7 @@ class TANR(torch.nn.Module):
         Args:
             news:
                 {
-                    "title": Tensor(batch_size) * num_words_title
+                    "title": batch_size * num_words_title
                 }
         Returns:
             (shape) batch_size, num_filters

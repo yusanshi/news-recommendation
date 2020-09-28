@@ -88,16 +88,16 @@ class NewsEncoder(torch.nn.Module):
         Args:
             news:
                 {
-                    "category": Tensor(batch_size),
-                    "subcategory": Tensor(batch_size),
-                    "title": Tensor(batch_size) * num_words_title,
-                    "abstract": Tensor(batch_size) * num_words_abstract,
+                    "category": batch_size,
+                    "subcategory": batch_size,
+                    "title": batch_size * num_words_title,
+                    "abstract": batch_size * num_words_abstract,
                 }
         Returns:
             (shape) batch_size, num_filters
         """
         text_vectors = [
-            encoder(torch.stack(news[name], dim=1).to(device))
+            encoder(news[name].to(device))
             for name, encoder in self.text_encoders.items()
         ]
         element_vectors = [

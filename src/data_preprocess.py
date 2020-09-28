@@ -2,14 +2,17 @@ from config import model_name
 import pandas as pd
 import swifter
 import json
+import math
 from tqdm import tqdm
 from os import path
+from pathlib import Path
 import random
 from nltk.tokenize import word_tokenize
 import numpy as np
 import csv
 import importlib
-from transformers import RobertaTokenizer
+from transformers import RobertaTokenizer, RobertaModel
+import torch
 
 try:
     config = getattr(importlib.import_module('config'), f"{model_name}Config")
@@ -80,8 +83,8 @@ def parse_behaviors(source, target, user2int_path):
         columns=['user', 'clicked_news', 'candidate_news', 'clicked'])
 
 
-def parse_news(source, target, category2int_path, word2int_path,
-               entity2int_path, mode):
+def parse_news(source, target, roberta_output_dir, category2int_path,
+               word2int_path, entity2int_path, mode):
     """
     Parse news for training set and test set
     Args:
@@ -123,6 +126,74 @@ def parse_news(source, target, category2int_path, word2int_path,
         'title_roberta', 'title_mask_roberta', 'abstract_roberta',
         'abstract_mask_roberta'
     ]
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    for x in [title_roberta, abstract_roberta]:
+        for key in x.keys():
+            x[key] = torch.tensor(x[key]).to(device)
+    Path(roberta_output_dir).mkdir(parents=True, exist_ok=True)
+    roberta = RobertaModel.from_pretrained('roberta-base',
+                                           return_dict=True).to(device)
+    with torch.no_grad():
+        for count in tqdm(range(math.ceil(len(news) / config.batch_size)),
+                          desc="Calculating news embeddings with RoBERTa"):
+            title_roberta_minibatch = {
+                k: v[count * config.batch_size:(1 + count) * config.batch_size]
+                for k, v in title_roberta.items()
+            }
+            title_outputs = roberta(**title_roberta_minibatch)
+            try:
+                title_last_hidden_state = np.concatenate([
+                    title_last_hidden_state,
+                    title_outputs['last_hidden_state'].cpu().numpy()
+                ],
+                                                         axis=0)
+            except NameError:
+                title_last_hidden_state = title_outputs[
+                    'last_hidden_state'].cpu().numpy()
+            try:
+                title_pooler_output = np.concatenate([
+                    title_pooler_output,
+                    title_outputs['pooler_output'].cpu().numpy()
+                ],
+                                                     axis=0)
+            except NameError:
+                title_pooler_output = title_outputs['pooler_output'].cpu(
+                ).numpy()
+
+            abstract_roberta_minibatch = {
+                k: v[count * config.batch_size:(1 + count) * config.batch_size]
+                for k, v in abstract_roberta.items()
+            }
+            abstract_outputs = roberta(**abstract_roberta_minibatch)
+            try:
+                abstract_last_hidden_state = np.concatenate([
+                    abstract_last_hidden_state,
+                    abstract_outputs['last_hidden_state'].cpu().numpy()
+                ],
+                                                            axis=0)
+            except NameError:
+                abstract_last_hidden_state = abstract_outputs[
+                    'last_hidden_state'].cpu().numpy()
+            try:
+                abstract_pooler_output = np.concatenate([
+                    abstract_pooler_output,
+                    abstract_outputs['pooler_output'].cpu().numpy()
+                ],
+                                                        axis=0)
+            except NameError:
+                abstract_pooler_output = abstract_outputs['pooler_output'].cpu(
+                ).numpy()
+
+        np.save(path.join(roberta_output_dir, 'title_last_hidden_state.npy'),
+                title_last_hidden_state)
+        np.save(path.join(roberta_output_dir, 'title_pooler_output.npy'),
+                title_pooler_output)
+        np.save(
+            path.join(roberta_output_dir, 'abstract_last_hidden_state.npy'),
+            abstract_last_hidden_state)
+        np.save(path.join(roberta_output_dir, 'abstract_pooler_output.npy'),
+                abstract_pooler_output)
 
     def parse_row(row):
         new_row = [
@@ -342,6 +413,7 @@ if __name__ == '__main__':
     print('Parse news')
     parse_news(path.join(train_dir, 'news.tsv'),
                path.join(train_dir, 'news_parsed.tsv'),
+               path.join(train_dir, 'roberta'),
                path.join(train_dir, 'category2int.tsv'),
                path.join(train_dir, 'word2int.tsv'),
                path.join(train_dir, 'entity2int.tsv'),
@@ -364,6 +436,7 @@ if __name__ == '__main__':
     print('Parse news')
     parse_news(path.join(val_dir, 'news.tsv'),
                path.join(val_dir, 'news_parsed.tsv'),
+               path.join(val_dir, 'roberta'),
                path.join(train_dir, 'category2int.tsv'),
                path.join(train_dir, 'word2int.tsv'),
                path.join(train_dir, 'entity2int.tsv'),
@@ -374,6 +447,7 @@ if __name__ == '__main__':
     print('Parse news')
     parse_news(path.join(test_dir, 'news.tsv'),
                path.join(test_dir, 'news_parsed.tsv'),
+               path.join(test_dir, 'roberta'),
                path.join(train_dir, 'category2int.tsv'),
                path.join(train_dir, 'word2int.tsv'),
                path.join(train_dir, 'entity2int.tsv'),
