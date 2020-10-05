@@ -15,10 +15,10 @@ The repository currently includes the following models.
 
 **Experimental models**
 
-| Model | Description |
-| ----- | ----------- |
-| Exp1  |             |
-| Exp2  | RoBERTa     |
+| Model | Description                                                  |
+| ----- | ------------------------------------------------------------ |
+| Exp1  | NRMS + (Sub)category + Ensemble + Positional embedding       |
+| Exp2  | RoBERTa (fixed or fine-tuned, word level or sentence level) + (Sub)category + Positional embedding |
 
 
 
