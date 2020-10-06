@@ -241,6 +241,9 @@ def evaluate(model, directory, max_count=sys.maxsize):
                 user_vector = model.get_user_vector(
                     minibatch['user'], minibatch['clicked_news_length'],
                     clicked_news_vector)
+            elif model_name == 'Exp3':
+                user_vector = model.get_user_vector(
+                    clicked_news_vector, clicked_news_vector)  # TODO
             else:
                 user_vector = model.get_user_vector(clicked_news_vector)
             for user, vector in zip(user_strings, user_vector):
@@ -266,13 +269,26 @@ def evaluate(model, directory, max_count=sys.maxsize):
         if count == max_count:
             break
 
-        y_pred = model.get_prediction(
-            torch.stack([
-                news2vector[news[0].split('-')[0]]
-                for news in minibatch['impressions']
-            ],
-                        dim=0),
-            user2vector[minibatch['clicked_news_string'][0]]).tolist()
+        candidate_news_vector = torch.stack([
+            news2vector[news[0].split('-')[0]]
+            for news in minibatch['impressions']
+        ],
+                                            dim=0)
+        user_vector = user2vector[minibatch['clicked_news_string'][0]]
+        click_probability = model.get_prediction(candidate_news_vector,
+                                                 user_vector)
+        if model_name == 'Exp3':
+            candidate_news_popularity_score = model.popularity_linear(
+                candidate_news_vector).squeeze(dim=-1)
+            eta = torch.sigmoid(model.eta_linear(user_vector).squeeze(dim=-1))
+            eta = eta.unsqueeze(
+                dim=-1).expand_as(candidate_news_popularity_score)
+            # batch_size, 1 + K
+            click_probability = (
+                1 - eta
+            ) * click_probability + eta * candidate_news_popularity_score
+
+        y_pred = click_probability.tolist()
         y = [int(news[0].split('-')[1]) for news in minibatch['impressions']]
 
         try:
