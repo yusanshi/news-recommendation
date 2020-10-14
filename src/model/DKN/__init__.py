@@ -97,7 +97,7 @@ class DKN(torch.nn.Module):
         """
         # candidate_size, len(window_sizes) * num_filters
         user_vector = self.attention(candidate_news_vector,
-                                     clicked_news_vector.unsqueeze(dim=0))
+                                     clicked_news_vector.expand(candidate_news_vector.size(0), -1, -1))
         # candidate_size
         click_probability = self.click_predictor(candidate_news_vector,
                                                  user_vector)
