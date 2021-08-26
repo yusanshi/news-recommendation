@@ -11,8 +11,6 @@ from nltk.tokenize import word_tokenize
 import numpy as np
 import csv
 import importlib
-from transformers import RobertaTokenizer, RobertaModel
-import torch
 
 try:
     config = getattr(importlib.import_module('config'), f"{model_name}Config")
@@ -83,8 +81,8 @@ def parse_behaviors(source, target, user2int_path):
         columns=['user', 'clicked_news', 'candidate_news', 'clicked'])
 
 
-def parse_news(source, target, roberta_output_dir, category2int_path,
-               word2int_path, entity2int_path, mode):
+def parse_news(source, target, category2int_path, word2int_path,
+               entity2int_path, mode):
     """
     Parse news for training set and test set
     Args:
@@ -107,69 +105,6 @@ def parse_news(source, target, roberta_output_dir, category2int_path,
     news.title_entities.fillna('[]', inplace=True)
     news.abstract_entities.fillna('[]', inplace=True)
     news.fillna(' ', inplace=True)
-
-    tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
-    title_roberta = tokenizer(news.title.tolist(),
-                              padding='max_length',
-                              truncation=True,
-                              max_length=config.num_words_title)
-    abstract_roberta = tokenizer(news.abstract.tolist(),
-                                 padding='max_length',
-                                 truncation=True,
-                                 max_length=config.num_words_abstract)
-
-    roberta_df = pd.DataFrame(data=[
-        title_roberta['input_ids'], title_roberta['attention_mask'],
-        abstract_roberta['input_ids'], abstract_roberta['attention_mask']
-    ]).T
-    roberta_df.columns = [
-        'title_roberta', 'title_mask_roberta', 'abstract_roberta',
-        'abstract_mask_roberta'
-    ]
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    for x in [title_roberta, abstract_roberta]:
-        for key in x.keys():
-            x[key] = torch.tensor(x[key]).to(device)
-    Path(roberta_output_dir).mkdir(parents=True, exist_ok=True)
-    roberta = RobertaModel.from_pretrained('roberta-base',
-                                           return_dict=True).to(device)
-    with torch.no_grad():
-        title_last_hidden_state = []
-        title_pooler_output = []
-        abstract_last_hidden_state = []
-        abstract_pooler_output = []
-        for count in tqdm(range(math.ceil(len(news) / config.batch_size)),
-                          desc="Calculating news embeddings with RoBERTa"):
-            title_roberta_minibatch = {
-                k: v[count * config.batch_size:(1 + count) * config.batch_size]
-                for k, v in title_roberta.items()
-            }
-            title_outputs = roberta(**title_roberta_minibatch)
-            title_last_hidden_state.append(
-                title_outputs['last_hidden_state'].cpu().numpy())
-            title_pooler_output.append(
-                title_outputs['pooler_output'].cpu().numpy())
-
-            abstract_roberta_minibatch = {
-                k: v[count * config.batch_size:(1 + count) * config.batch_size]
-                for k, v in abstract_roberta.items()
-            }
-            abstract_outputs = roberta(**abstract_roberta_minibatch)
-            abstract_last_hidden_state.append(
-                abstract_outputs['last_hidden_state'].cpu().numpy())
-            abstract_pooler_output.append(
-                abstract_outputs['pooler_output'].cpu().numpy())
-
-        np.save(path.join(roberta_output_dir, 'title_last_hidden_state.npy'),
-                np.concatenate(title_last_hidden_state, axis=0))
-        np.save(path.join(roberta_output_dir, 'title_pooler_output.npy'),
-                np.concatenate(title_pooler_output, axis=0))
-        np.save(
-            path.join(roberta_output_dir, 'abstract_last_hidden_state.npy'),
-            np.concatenate(abstract_last_hidden_state, axis=0))
-        np.save(path.join(roberta_output_dir, 'abstract_pooler_output.npy'),
-                np.concatenate(abstract_pooler_output, axis=0))
 
     def parse_row(row):
         new_row = [
@@ -267,7 +202,6 @@ def parse_news(source, target, roberta_output_dir, category2int_path,
                 entity2int[k] = len(entity2int) + 1
 
         parsed_news = news.swifter.apply(parse_row, axis=1)
-        parsed_news = pd.concat([parsed_news, roberta_df], axis=1)
         parsed_news.to_csv(target, sep='\t', index=False)
 
         pd.DataFrame(category2int.items(),
@@ -302,7 +236,6 @@ def parse_news(source, target, roberta_output_dir, category2int_path,
         entity2int = dict(pd.read_table(entity2int_path).values.tolist())
 
         parsed_news = news.swifter.apply(parse_row, axis=1)
-        parsed_news = pd.concat([parsed_news, roberta_df], axis=1)
         parsed_news.to_csv(target, sep='\t', index=False)
 
     else:
@@ -389,7 +322,6 @@ if __name__ == '__main__':
     print('Parse news')
     parse_news(path.join(train_dir, 'news.tsv'),
                path.join(train_dir, 'news_parsed.tsv'),
-               path.join(train_dir, 'roberta'),
                path.join(train_dir, 'category2int.tsv'),
                path.join(train_dir, 'word2int.tsv'),
                path.join(train_dir, 'entity2int.tsv'),
@@ -412,7 +344,6 @@ if __name__ == '__main__':
     print('Parse news')
     parse_news(path.join(val_dir, 'news.tsv'),
                path.join(val_dir, 'news_parsed.tsv'),
-               path.join(val_dir, 'roberta'),
                path.join(train_dir, 'category2int.tsv'),
                path.join(train_dir, 'word2int.tsv'),
                path.join(train_dir, 'entity2int.tsv'),
@@ -423,7 +354,6 @@ if __name__ == '__main__':
     print('Parse news')
     parse_news(path.join(test_dir, 'news.tsv'),
                path.join(test_dir, 'news_parsed.tsv'),
-               path.join(test_dir, 'roberta'),
                path.join(train_dir, 'category2int.tsv'),
                path.join(train_dir, 'word2int.tsv'),
                path.join(train_dir, 'entity2int.tsv'),

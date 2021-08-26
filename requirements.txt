@@ -6,5 +6,4 @@ tqdm
 nltk
 scikit-learn
 swifter
-transformers
 ray[tune]

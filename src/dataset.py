@@ -15,12 +15,11 @@ except AttributeError:
 
 
 class BaseDataset(Dataset):
-    def __init__(self, behaviors_path, news_path, roberta_embedding_dir):
+    def __init__(self, behaviors_path, news_path):
         super(BaseDataset, self).__init__()
         assert all(attribute in [
             'category', 'subcategory', 'title', 'abstract', 'title_entities',
-            'abstract_entities', 'title_roberta', 'title_mask_roberta',
-            'abstract_roberta', 'abstract_mask_roberta'
+            'abstract_entities'
         ] for attribute in config.dataset_attributes['news'])
         assert all(attribute in ['user', 'clicked_news_length']
                    for attribute in config.dataset_attributes['record'])
@@ -33,9 +32,7 @@ class BaseDataset(Dataset):
             converters={
                 attribute: literal_eval
                 for attribute in set(config.dataset_attributes['news']) & set([
-                    'title', 'abstract', 'title_entities', 'abstract_entities',
-                    'title_roberta', 'title_mask_roberta', 'abstract_roberta',
-                    'abstract_mask_roberta'
+                    'title', 'abstract', 'title_entities', 'abstract_entities'
                 ])
             })
         self.news_id2int = {x: i for i, x in enumerate(self.news_parsed.index)}
@@ -50,11 +47,7 @@ class BaseDataset(Dataset):
             'title': [0] * config.num_words_title,
             'abstract': [0] * config.num_words_abstract,
             'title_entities': [0] * config.num_words_title,
-            'abstract_entities': [0] * config.num_words_abstract,
-            'title_roberta': [0] * config.num_words_title,
-            'title_mask_roberta': [0] * config.num_words_title,
-            'abstract_roberta': [0] * config.num_words_abstract,
-            'abstract_mask_roberta': [0] * config.num_words_abstract
+            'abstract_entities': [0] * config.num_words_abstract
         }
         for key in padding_all.keys():
             padding_all[key] = torch.tensor(padding_all[key])
@@ -64,45 +57,6 @@ class BaseDataset(Dataset):
             for k, v in padding_all.items()
             if k in config.dataset_attributes['news']
         }
-
-        if model_name == 'Exp2' and not config.fine_tune:
-            if config.roberta_level == 'word':
-                self.roberta_embedding = {
-                    k: torch.from_numpy(
-                        np.load(
-                            path.join(roberta_embedding_dir,
-                                      f'{k}_last_hidden_state.npy'))).float()
-                    for k in set(config.dataset_attributes['news'])
-                    & set(['title', 'abstract'])
-                }
-                name2length = {
-                    'title': config.num_words_title,
-                    'abstract': config.num_words_abstract
-                }
-                for k in set(config.dataset_attributes['news']) & set(
-                    ['title', 'abstract']):
-                    self.padding[k] = torch.zeros((name2length[k], 768))
-
-            elif config.roberta_level == 'sentence':
-                self.roberta_embedding = {
-                    k: torch.from_numpy(
-                        np.load(
-                            path.join(roberta_embedding_dir,
-                                      f'{k}_pooler_output.npy'))).float()
-                    for k in set(config.dataset_attributes['news'])
-                    & set(['title', 'abstract'])
-                }
-                for k in set(config.dataset_attributes['news']) & set(
-                    ['title', 'abstract']):
-                    self.padding[k] = torch.zeros(768)
-
-    def _news2dict(self, id):
-        ret = self.news2dict[id]
-        if model_name == 'Exp2' and not config.fine_tune:
-            for k in set(config.dataset_attributes['news']) & set(
-                ['title', 'abstract']):
-                ret[k] = self.roberta_embedding[k][self.news_id2int[id]]
-        return ret
 
     def __len__(self):
         return len(self.behaviors_parsed)
@@ -114,10 +68,10 @@ class BaseDataset(Dataset):
             item['user'] = row.user
         item["clicked"] = list(map(int, row.clicked.split()))
         item["candidate_news"] = [
-            self._news2dict(x) for x in row.candidate_news.split()
+            self.news2dict[x] for x in row.candidate_news.split()
         ]
         item["clicked_news"] = [
-            self._news2dict(x)
+            self.news2dict[x]
             for x in row.clicked_news.split()[:config.num_clicked_news_a_user]
         ]
         if 'clicked_news_length' in config.dataset_attributes['record']:

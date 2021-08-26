@@ -15,12 +15,10 @@ The repository currently includes the following models.
 
 **Experimental models**
 
-| Model | Description                                                  |
-| ----- | ------------------------------------------------------------ |
-| Exp1  | NRMS + (Sub)category + Ensemble + Positional embedding       |
-| Exp2  | RoBERTa (fixed or fine-tuned, word level or sentence level) + (Sub)category + Positional embedding |
-
-
+| Model | Description                                                                                        |
+| ----- | -------------------------------------------------------------------------------------------------- |
+| Exp1  | NRMS + (Sub)category + Ensemble + Positional embedding                                             |
+| ~~Exp2~~  | ~~RoBERTa (fixed or fine-tuned, word level or sentence level) + (Sub)category + Positional embedding~~ |
 
 ## Get started
 
@@ -91,14 +89,14 @@ tensorboard --logdir=runs/{model_name}
 
 ## Results
 
-| Model     | AUC  | nMRR | nDCG@5 | nDCG@10 | Remark |
-| --------- | ---- | ---- | ------ | ------- | ------ |
-| NRMS      |      |      |        |         |        |
-| NAML      |      |      |        |         |        |
-| LSTUR     |      |      |        |         |        |
-| DKN       |      |      |        |         |        |
-| Hi-Fi Ark |      |      |        |         |        |
-| TANR      |      |      |        |         |        |
+| Model     | AUC | MRR | nDCG@5 | nDCG@10 | Remark |
+| --------- | --- | --- | ------ | ------- | ------ |
+| NRMS      |     |     |        |         |        |
+| NAML      |     |     |        |         |        |
+| LSTUR     |     |     |        |         |        |
+| DKN       |     |     |        |         |        |
+| Hi-Fi Ark |     |     |        |         |        |
+| TANR      |     |     |        |         |        |
 
 Checkpoints: <https://drive.google.com/open?id=TODO>
 

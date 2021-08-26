@@ -27,10 +27,10 @@ class BaseConfig():
     negative_sampling_ratio = 2  # K
     dropout_probability = 0.2
     # Modify the following by the output of `src/dataprocess.py`
-    num_words = 1 + 101220
-    num_categories = 1 + 295
-    num_entities = 1 + 21842
-    num_users = 1 + 711222
+    num_words = 1 + 70975
+    num_categories = 1 + 274
+    num_entities = 1 + 12957
+    num_users = 1 + 50000
     word_embedding_dim = 300
     category_embedding_dim = 100
     # Modify the following only if you use another dataset
@@ -104,31 +104,3 @@ class Exp1Config(BaseConfig):
     # For multi-head self-attention
     num_attention_heads = 15
     ensemble_factor = 1  # Not use ensemble since it's too expensive
-
-
-class Exp2Config(BaseConfig):
-    dataset_attributes = {
-        "news": ['category', 'subcategory', 'title'],
-        "record": []
-    }
-    roberta_level = os.environ[
-        'ROBERTA_LEVEL'] if 'ROBERTA_LEVEL' in os.environ else 'sentence'
-    assert roberta_level in ['word', 'sentence']
-    fine_tune = False
-    # For multi-head self-attention
-    num_attention_heads = 15
-    if fine_tune:
-        for x in ['title', 'abstract']:
-            if x in dataset_attributes['news']:
-                dataset_attributes['news'].remove(x)
-                dataset_attributes['news'].extend(
-                    [f'{x}_roberta', f'{x}_mask_roberta'])
-
-
-class Exp3Config(BaseConfig):
-    dataset_attributes = {
-        "news": ['category', 'subcategory', 'title'],
-        "record": []
-    }
-    # For multi-head self-attention
-    num_attention_heads = 15

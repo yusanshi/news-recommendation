@@ -51,7 +51,7 @@ class NewsDataset(Dataset):
     """
     Load news for evaluation.
     """
-    def __init__(self, news_path, roberta_embedding_dir):
+    def __init__(self, news_path):
         super(NewsDataset, self).__init__()
         self.news_parsed = pd.read_table(
             news_path,
@@ -59,9 +59,7 @@ class NewsDataset(Dataset):
             converters={
                 attribute: literal_eval
                 for attribute in set(config.dataset_attributes['news']) & set([
-                    'title', 'abstract', 'title_entities', 'abstract_entities',
-                    'title_roberta', 'title_mask_roberta', 'abstract_roberta',
-                    'abstract_mask_roberta'
+                    'title', 'abstract', 'title_entities', 'abstract_entities'
                 ])
             })
         self.news2dict = self.news_parsed.to_dict('index')
@@ -71,36 +69,11 @@ class NewsDataset(Dataset):
                     self.news2dict[key1][key2] = torch.tensor(
                         self.news2dict[key1][key2])
 
-        if model_name == 'Exp2' and not config.fine_tune:
-            if config.roberta_level == 'word':
-                self.roberta_embedding = {
-                    k: torch.from_numpy(
-                        np.load(
-                            path.join(roberta_embedding_dir,
-                                      f'{k}_last_hidden_state.npy'))).float()
-                    for k in set(config.dataset_attributes['news'])
-                    & set(['title', 'abstract'])
-                }
-
-            elif config.roberta_level == 'sentence':
-                self.roberta_embedding = {
-                    k: torch.from_numpy(
-                        np.load(
-                            path.join(roberta_embedding_dir,
-                                      f'{k}_pooler_output.npy'))).float()
-                    for k in set(config.dataset_attributes['news'])
-                    & set(['title', 'abstract'])
-                }
-
     def __len__(self):
         return len(self.news_parsed)
 
     def __getitem__(self, idx):
         item = self.news2dict[idx]
-        if model_name == 'Exp2' and not config.fine_tune:
-            for k in set(config.dataset_attributes['news']) & set(
-                ['title', 'abstract']):
-                item[k] = self.roberta_embedding[k][idx]
         return item
 
 
@@ -192,12 +165,11 @@ def evaluate(model, directory, max_count=sys.maxsize):
         directory: the directory that contains two files (behaviors.tsv, news_parsed.tsv)
     Returns:
         AUC
-        nMRR
+        MRR
         nDCG@5
         nDCG@10
     """
-    news_dataset = NewsDataset(path.join(directory, 'news_parsed.tsv'),
-                               path.join(directory, 'roberta'))
+    news_dataset = NewsDataset(path.join(directory, 'news_parsed.tsv'))
     news_dataloader = DataLoader(news_dataset,
                                  batch_size=config.batch_size * 16,
                                  shuffle=False,
