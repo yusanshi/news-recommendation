@@ -9,6 +9,7 @@ import sys
 import pandas as pd
 from ast import literal_eval
 import importlib
+from multiprocessing import Pool
 
 try:
     Model = getattr(importlib.import_module(f"model.{model_name}"), model_name)
@@ -156,13 +157,25 @@ class BehaviorsDataset(Dataset):
         return item
 
 
+def calculate_single_user_metric(pair):
+    try:
+        auc = roc_auc_score(*pair)
+        mrr = mrr_score(*pair)
+        ndcg5 = ndcg_score(*pair, 5)
+        ndcg10 = ndcg_score(*pair, 10)
+        return [auc, mrr, ndcg5, ndcg10]
+    except ValueError:
+        return [np.nan] * 4
+
+
 @torch.no_grad()
-def evaluate(model, directory, max_count=sys.maxsize):
+def evaluate(model, directory, num_workers, max_count=sys.maxsize):
     """
     Evaluate model on target directory.
     Args:
         model: model to be evaluated
         directory: the directory that contains two files (behaviors.tsv, news_parsed.tsv)
+        num_workers: processes number for calculating metrics
     Returns:
         AUC
         MRR
@@ -225,12 +238,9 @@ def evaluate(model, directory, max_count=sys.maxsize):
                                       shuffle=False,
                                       num_workers=config.num_workers)
 
-    aucs = []
-    mrrs = []
-    ndcg5s = []
-    ndcg10s = []
-
     count = 0
+
+    tasks = []
 
     for minibatch in tqdm(behaviors_dataloader,
                           desc="Calculating probabilities"):
@@ -248,22 +258,18 @@ def evaluate(model, directory, max_count=sys.maxsize):
                                                  user_vector)
 
         y_pred = click_probability.tolist()
-        y = [int(news[0].split('-')[1]) for news in minibatch['impressions']]
+        y_true = [
+            int(news[0].split('-')[1]) for news in minibatch['impressions']
+        ]
 
-        try:
-            auc = roc_auc_score(y, y_pred)
-            mrr = mrr_score(y, y_pred)
-            ndcg5 = ndcg_score(y, y_pred, 5)
-            ndcg10 = ndcg_score(y, y_pred, 10)
-        except ValueError:
-            continue
+        tasks.append((y_true, y_pred))
 
-        aucs.append(auc)
-        mrrs.append(mrr)
-        ndcg5s.append(ndcg5)
-        ndcg10s.append(ndcg10)
+    with Pool(processes=num_workers) as pool:
+        results = pool.map(calculate_single_user_metric, tasks)
 
-    return np.mean(aucs), np.mean(mrrs), np.mean(ndcg5s), np.mean(ndcg10s)
+    aucs, mrrs, ndcg5s, ndcg10s = np.array(results).T
+    return np.nanmean(aucs), np.nanmean(mrrs), np.nanmean(ndcg5s), np.nanmean(
+        ndcg10s)
 
 
 if __name__ == '__main__':
@@ -281,7 +287,8 @@ if __name__ == '__main__':
     checkpoint = torch.load(checkpoint_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
-    auc, mrr, ndcg5, ndcg10 = evaluate(model, './data/test')
+    auc, mrr, ndcg5, ndcg10 = evaluate(model, './data/test',
+                                       config.num_workers)
     print(
         f'AUC: {auc:.4f}\nMRR: {mrr:.4f}\nnDCG@5: {ndcg5:.4f}\nnDCG@10: {ndcg10:.4f}'
     )
