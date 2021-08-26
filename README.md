@@ -18,7 +18,6 @@ The repository currently includes the following models.
 | Model | Description                                                                                        |
 | ----- | -------------------------------------------------------------------------------------------------- |
 | Exp1  | NRMS + (Sub)category + Ensemble + Positional embedding                                             |
-| ~~Exp2~~  | ~~RoBERTa (fixed or fine-tuned, word level or sentence level) + (Sub)category + Positional embedding~~ |
 
 ## Get started
 
@@ -75,13 +74,7 @@ Run.
 # Train and save checkpoint into `checkpoint/{model_name}/` directory
 python3 src/train.py
 # Load latest checkpoint and evaluate on the test set
-# This will also generate prediction file `data/test/prediction.txt`
 python3 src/evaluate.py
-
-# or
-
-chmod +x run.sh
-./run.sh
 ```
 
 You can visualize metrics with TensorBoard.
